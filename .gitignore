@@ -23,3 +23,13 @@ npm-debug.log*
 
 Thumbs.db
 desktop.ini
+
+*.db
+*.db-shm
+*.db-wal
+
+.idea/
+*.sln.DotSettings.user
+
+appsettings.Development.json
+appsettings.Local.json
