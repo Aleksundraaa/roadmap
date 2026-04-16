@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RoadMap | Создай свой путь</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="container">
+    <header>
+        <h1 class="gradient-text">RoadMap Generator</h1>
+        <p>Визуализируйте свое обучение и проекты за считанные секунды</p>
+    </header>
+
+    <main class="actions">
+        <div class="card create-card">
+            <div class="icon">➕</div>
+            <h2>Новый холст</h2>
+            <p>Начните проект с чистого листа</p>
+            <input type="text" id="newTitle" placeholder="Название (напр. План Python)">
+            <button onclick="createRoadmap()" id="btnCreate">Создать холст</button>
+        </div>
+
+        <div class="card open-card">
+            <div class="icon">🔑</div>
+            <h2>Войти по ключу</h2>
+            <p>Введите ключ для доступа к холсту</p>
+            <input type="text" id="urlKey" maxlength="8" placeholder="Напр. 7059e041">
+            <button onclick="openRoadmap()" id="btnOpen">Открыть проект</button>
+        </div>
+    </main>
+</div>
+<script src="app.js"></script>
+</body>
+</html>
