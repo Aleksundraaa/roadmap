@@ -1,0 +1,61 @@
+:root {
+    --bg-dark: #0d1117;
+    --panel-bg: #161b22;
+    --accent: #58a6ff;
+    --text: #f0f6fc;
+}
+
+body {
+    margin: 0;
+    font-family: sans-serif;
+    background-color: var(--bg-dark);
+    color: var(--text);
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.top-bar {
+    background: var(--panel-bg);
+    padding: 15px 25px;
+    display: flex;
+    align-items: center;
+    border-bottom: 1px solid #30363d;
+}
+
+.btn-back {
+    background: #21262d;
+    color: var(--text);
+    border: 1px solid #30363d;
+    padding: 8px 15px;
+    border-radius: 6px;
+    cursor: pointer;
+    margin-right: 20px;
+}
+
+.info h1 {
+    font-size: 1.2rem;
+    margin: 0;
+}
+
+.badge {
+    font-size: 0.8rem;
+    color: #8b949e;
+    font-family: monospace;
+}
+
+#canvas-container {
+    flex-grow: 1;
+    position: relative;
+    overflow: hidden;
+    background-image: radial-gradient(#30363d 1px, transparent 1px);
+    background-size: 20px 20px; /* Сетка как в редакторах */
+}
+
+#canvas-placeholder {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: #484f58;
+}

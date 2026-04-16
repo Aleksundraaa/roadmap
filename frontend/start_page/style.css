@@ -169,7 +169,17 @@ button:hover {
     margin-right: 10px;
 }
 
-.theme-switch input { display: none; }
+.theme-switch input {
+    display: none;
+}
+
+.theme-text-dark {
+    margin-right: 15px;
+}
+
+.theme-text-light {
+    margin-left: 15px;
+}
 
 .slider {
     background-color: #ccc;
@@ -200,6 +210,14 @@ button:hover {
     z-index: 2;
 }
 
-input:checked + .slider { background-color: var(--primary); }
-input:checked + .slider:before { transform: translateX(22px); }
-.slider .icon-theme { font-size: 12px; }
+input:checked + .slider {
+    background-color: var(--primary);
+}
+
+input:checked + .slider:before {
+    transform: translateX(22px);
+}
+
+.slider .icon-theme {
+    font-size: 12px;
+}
