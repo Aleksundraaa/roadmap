@@ -59,16 +59,19 @@ body {
 #canvas-container {
     flex-grow: 1;
     position: relative;
-    overflow: hidden;
+    overflow: hidden; /* Чтобы холст не вылезал за границы */
     background-color: var(--bg-dark);
     background-image: radial-gradient(var(--grid-color) 1px, transparent 1px);
     background-size: 20px 20px;
+    cursor: grab;
 }
 
-#canvas-placeholder {
+#canvas-content {
+    width: 5000px; /* Делаем холст огромным */
+    height: 5000px;
     position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    color: #484f58;
+    top: 0;
+    left: 0;
+    transform-origin: 0 0; /* Важно для зума как в Miro */
+    will-change: transform;
 }

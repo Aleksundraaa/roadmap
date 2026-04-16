@@ -47,3 +47,38 @@ function copyKey() {
 }
 
 loadRoadmap();
+
+let scale = 1;
+const minScale = 0.2;
+const maxScale = 3;
+const zoomSpeed = 0.001;
+
+const container = document.getElementById('canvas-container');
+const content = document.getElementById('canvas-content');
+
+let pointX = 0;
+let pointY = 0;
+
+container.addEventListener('wheel', (e) => {
+    e.preventDefault(); // Запрещаем скролл страницы
+
+    const rect = container.getBoundingClientRect();
+
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+
+    const delta = -e.deltaY;
+    const factor = Math.pow(1.1, delta / 100); // Плавный коэффициент
+    const newScale = Math.min(Math.max(scale * factor, minScale), maxScale);
+
+    pointX = x - (x - pointX) * (newScale / scale);
+    pointY = y - (y - pointY) * (newScale / scale);
+
+    scale = newScale;
+
+    updateTransform();
+}, { passive: false });
+
+function updateTransform() {
+    content.style.transform = `translate(${pointX}px, ${pointY}px) scale(${scale})`;
+}
