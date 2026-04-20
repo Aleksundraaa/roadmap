@@ -31,6 +31,8 @@ public class RoadmapController : ControllerBase
 
         return Ok(roadmap);
     }
+    
+    public record CreateRoadmapRequest(string Title);
 
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] CreateRoadmapRequest request)
@@ -93,6 +95,16 @@ public class RoadmapController : ControllerBase
         await _context.SaveChangesAsync();
         return Ok(node);
     }
+    
+    [HttpDelete("nodes/{id}")]
+    public async Task<IActionResult> DeleteNode(int id)
+    {
+        var node = await _context.Nodes.FindAsync(id);
+        if (node == null) return NotFound();
 
-    public record CreateRoadmapRequest(string Title);
+        _context.Nodes.Remove(node);
+        await _context.SaveChangesAsync();
+
+        return NoContent(); 
+    }
 }

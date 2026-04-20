@@ -31,7 +31,6 @@ async function createRoadmap() {
         if (!response.ok) throw new Error();
         const data = await response.json();
 
-        // Уходим на страницу холста
         window.location.href = `../roadmap_page/roadmap.html?key=${data.urlKey}`;
     } catch (e) {
         alert("Ошибка сервера. Проверь Rider!");

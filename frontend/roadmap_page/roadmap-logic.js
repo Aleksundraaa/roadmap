@@ -84,6 +84,29 @@ function renderNodes(nodes) {
     });
 }
 
+document.getElementById('btnDeleteNode').onclick = async () => {
+    if (!currentNode) return;
+
+    if (!confirm(`Вы уверены, что хотите удалить тему "${currentNode.title}"?`)) {
+        return;
+    }
+
+    try {
+        const res = await fetch(`${API_URL}/nodes/${currentNode.id}`, {
+            method: 'DELETE'
+        });
+
+        if (res.ok) {
+            closeDetails();
+            await loadRoadmap();
+        } else {
+            alert("Не удалось удалить ноду");
+        }
+    } catch (e) {
+        console.error("Ошибка при удалении:", e);
+    }
+};
+
 function renderEdges(nodes) {
     svgLayer.innerHTML = '';
     nodes.forEach(node => {

@@ -122,4 +122,22 @@ body {
 .btn-save { flex: 2; background: var(--primary); color: white; border: none; padding: 14px; border-radius: 12px; font-weight: 700; cursor: pointer; }
 .btn-cancel { flex: 1; background: var(--bg); color: var(--text); border: 1px solid var(--border); padding: 14px; border-radius: 12px; cursor: pointer; }
 
+.btn-delete {
+    width: 100%;
+    margin-top: 15px;
+    background: transparent;
+    color: #ff4d4d;
+    border: 1px solid #ff4d4d;
+    padding: 10px;
+    border-radius: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-delete:hover {
+    background: #ff4d4d;
+    color: white;
+}
+
 #copyStatus { display: none; color: #22c55e; margin-left: 10px; }
