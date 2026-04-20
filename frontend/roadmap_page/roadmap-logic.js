@@ -61,8 +61,7 @@ function renderNodes(nodes) {
             <div class="progress-track"></div>
         `;
 
-        card.onclick = (e) => {
-            if (isDraggingNode) return;
+        card.ondblclick = (e) => {
             e.stopPropagation();
             showNodeDetails(node);
         };
@@ -157,7 +156,6 @@ function showNodeDetails(node) {
     currentNode = node;
     document.getElementById('node-edit-title').value = node.title || "";
     document.getElementById('node-edit-desc').value = node.description || "";
-    document.getElementById('node-edit-id').innerText = node.id;
     document.getElementById('node-modal').classList.add('active');
 }
 
@@ -197,14 +195,8 @@ function updateTransform() {
 
 container.onwheel = (e) => {
     e.preventDefault();
-    const rect = container.getBoundingClientRect();
-    const mouseX = e.clientX - rect.left;
-    const mouseY = e.clientY - rect.top;
     const factor = Math.pow(1.1, -e.deltaY / 200);
-    const newScale = Math.min(Math.max(scale * factor, 0.1), 3);
-    pointX = mouseX - (mouseX - pointX) * (newScale / scale);
-    pointY = mouseY - (mouseY - pointY) * (newScale / scale);
-    scale = newScale;
+    scale = Math.min(Math.max(scale * factor, 0.1), 3);
     updateTransform();
 };
 
