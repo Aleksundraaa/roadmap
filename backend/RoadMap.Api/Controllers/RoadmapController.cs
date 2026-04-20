@@ -52,6 +52,47 @@ public class RoadmapController : ControllerBase
 
         return Ok(roadmap);
     }
+    
+    public record AddNodeRequest(string Title, string? Description, double X, double Y);
+
+    [HttpPost("{urlKey}/nodes")]
+    public async Task<IActionResult> AddNode(string urlKey, [FromBody] AddNodeRequest request)
+    {
+        var roadmap = await _context.Roadmaps.FirstOrDefaultAsync(r => r.UrlKey == urlKey);
+        if (roadmap == null) return NotFound("Карта не найдена");
+
+        var node = new Node
+        {
+            Title = request.Title,
+            Description = request.Description,
+            X = request.X,
+            Y = request.Y,
+            RoadmapId = roadmap.Id 
+        };
+
+        _context.Nodes.Add(node);
+        await _context.SaveChangesAsync();
+
+        return Ok(node);
+    }
+
+    public record UpdateNodeRequest(string Title, string? Description, double X, double Y, int? ParentNodeId);
+
+    [HttpPut("nodes/{id}")]
+    public async Task<IActionResult> UpdateNode(int id, [FromBody] UpdateNodeRequest request)
+    {
+        var node = await _context.Nodes.FindAsync(id);
+        if (node == null) return NotFound();
+
+        node.Title = request.Title;
+        node.Description = request.Description;
+        node.X = request.X;
+        node.Y = request.Y;
+        node.ParentNodeId = request.ParentNodeId;
+
+        await _context.SaveChangesAsync();
+        return Ok(node);
+    }
 
     public record CreateRoadmapRequest(string Title);
 }

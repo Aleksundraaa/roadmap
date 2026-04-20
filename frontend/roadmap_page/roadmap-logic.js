@@ -1,282 +1,245 @@
-// const API_URL = 'http://localhost:5130/api/Roadmap';
-//
-// async function loadRoadmap() {
-//     const params = new URLSearchParams(window.location.search);
-//     const key = params.get('key');
-//
-//     if (!key) {
-//         alert("Ключ не найден в URL!");
-//         window.location.href = 'index.html';
-//         return;
-//     }
-//
-//     document.getElementById('roadmapKey').innerText = `${key}`;
-//
-//     try {
-//         const response = await fetch(`${API_URL}/${key}`);
-//
-//         if (response.status === 404) {
-//             alert("Такой дорожной карты не существует!");
-//             window.location.href = 'index.html';
-//             return;
-//         }
-//
-//         const data = await response.json();
-//
-//         document.getElementById('roadmapTitle').innerText = data.title || "Без названия";
-//
-//         console.log("Данные успешно загружены:", data);
-//
-//     } catch (error) {
-//         console.error("Ошибка загрузки:", error);
-//         alert("Не удалось связаться с сервером");
-//     }
-// }
-//
-// function copyKey() {
-//     const keyText = document.getElementById('roadmapKey').innerText;
-//
-//     navigator.clipboard.writeText(keyText).then(() => {
-//         const status = document.getElementById('copyStatus');
-//         status.style.display = 'inline';
-//
-//         setTimeout(() => {
-//             status.style.display = 'none';
-//         }, 2000);
-//     });
-// }
-//
-// loadRoadmap();
-//
-// let scale = 1;
-// const minScale = 0.2;
-// const maxScale = 3;
-// const zoomSpeed = 0.001;
-//
-// const container = document.getElementById('canvas-container');
-// const content = document.getElementById('canvas-content');
-//
-// let pointX = 0;
-// let pointY = 0;
-//
-// container.addEventListener('wheel', (e) => {
-//     e.preventDefault(); // Запрещаем скролл страницы
-//
-//     const rect = container.getBoundingClientRect();
-//
-//     const x = e.clientX - rect.left;
-//     const y = e.clientY - rect.top;
-//
-//     const delta = -e.deltaY;
-//     const factor = Math.pow(1.1, delta / 100); // Плавный коэффициент
-//     const newScale = Math.min(Math.max(scale * factor, minScale), maxScale);
-//
-//     pointX = x - (x - pointX) * (newScale / scale);
-//     pointY = y - (y - pointY) * (newScale / scale);
-//
-//     scale = newScale;
-//
-//     updateTransform();
-// }, { passive: false });
-//
-// function updateTransform() {
-//     content.style.transform = `translate(${pointX}px, ${pointY}px) scale(${scale})`;
-// }
+const API_URL = 'http://localhost:5000/api/Roadmap';
+let roadmapData = null;
+let currentNode = null;
 
-// --- КОНСТАНТЫ И НАСТРОЙКИ ---
-const CANVAS_WIDTH = 6000;
-const CANVAS_HEIGHT = 6000;
+let isDraggingNode = false;
+let draggedNodeElement = null;
+let draggedNodeData = null;
+let dragStartX = 0;
+let dragStartY = 0;
+
 const NODE_WIDTH = 200;
-const NODE_HEIGHT = 120; // Примерная высота карточки
+const NODE_HEIGHT = 120;
 
-// --- MOCK DATA (ЗАГЛУШКИ) ---
-const mockNodes = [
-    { id: 1, title: 'Основы HTML & CSS', status: 'done', parentId: null, x: 2800, y: 2800, tasks: 8, completed: 8, desc: 'Базовая разметка, семантика и стилизация страниц.' },
-    { id: 2, title: 'JavaScript Basic', status: 'done', parentId: 1, x: 3100, y: 2800, tasks: 12, completed: 12, desc: 'Переменные, циклы, функции и основы работы с DOM.' },
-    { id: 3, title: 'Продвинутый JS', status: 'progress', parentId: 2, x: 3400, y: 2700, tasks: 10, completed: 4, desc: 'Замыкания, прототипы, асинхронность и Fetch API.' },
-    { id: 4, title: 'React.js Основы', status: 'todo', parentId: 3, x: 3750, y: 2650, tasks: 15, completed: 0, desc: 'Компоненты, хуки и управление состоянием.' },
-    { id: 5, title: 'Node.js & Express', status: 'todo', parentId: 3, x: 3750, y: 2850, tasks: 10, completed: 0, desc: 'Создание серверных приложений и API.' }
-];
-
-// --- ИНИЦИАЛИЗАЦИЯ ---
 let scale = 1;
-let pointX = -2800 + (window.innerWidth / 2); // Центрируем на стартовом узле
-let pointY = -2800 + (window.innerHeight / 2);
-let isDragging = false;
-let startX, startY;
+let pointX = 0;
+let pointY = 0;
+let isPanning = false;
+let startPanX, startPanY;
 
 const container = document.getElementById('canvas-container');
 const content = document.getElementById('canvas-content');
 const nodesLayer = document.getElementById('nodes-layer');
 const svgLayer = document.getElementById('canvas-svg');
 
-// Применение темы
-const applyTheme = () => {
-    const theme = localStorage.getItem('theme') || 'light';
-    document.documentElement.setAttribute('data-theme', theme);
-};
+async function loadRoadmap() {
+    const params = new URLSearchParams(window.location.search);
+    const key = params.get('key');
+    if (!key) return window.location.href = '../start_page/index.html';
 
-// Рендеринг связей (ребер)
-function renderEdges() {
-    svgLayer.innerHTML = '';
-    mockNodes.forEach(node => {
-        if (node.parentId) {
-            const parent = mockNodes.find(n => n.id === node.parentId);
-            if (parent) {
-                drawEdge(parent, node);
-            }
+    document.getElementById('roadmapKey').innerText = key;
+
+    try {
+        const response = await fetch(`${API_URL}/${key}`);
+        if (!response.ok) throw new Error();
+        roadmapData = await response.json();
+
+        document.getElementById('roadmapTitle').innerText = roadmapData.title;
+
+        renderNodes(roadmapData.nodes);
+        renderEdges(roadmapData.nodes);
+
+        if (roadmapData.nodes.length > 0 && pointX === 0) {
+            centerOnNode(roadmapData.nodes[0]);
         }
-    });
+    } catch (e) {
+        console.error("Ошибка загрузки:", e);
+    }
 }
 
-function drawEdge(source, target) {
-    const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
-
-    // Координаты центров сторон (выход справа, вход слева)
-    const x1 = source.x + NODE_WIDTH;
-    const y1 = source.y + (NODE_HEIGHT / 2);
-    const x2 = target.x;
-    const y2 = target.y + (NODE_HEIGHT / 2);
-
-    // Рисуем кривую Безье
-    const cp1x = x1 + (x2 - x1) / 2;
-    const cp2x = x1 + (x2 - x1) / 2;
-
-    const d = `M ${x1} ${y1} C ${cp1x} ${y1}, ${cp2x} ${y2}, ${x2} ${y2}`;
-
-    path.setAttribute("d", d);
-    path.setAttribute("fill", "none");
-    path.setAttribute("stroke", "var(--accent)");
-    path.setAttribute("stroke-width", "2");
-    path.setAttribute("opacity", "0.4");
-    svgLayer.appendChild(path);
-}
-
-// Рендеринг карточек
-function renderNodes() {
+function renderNodes(nodes) {
     nodesLayer.innerHTML = '';
-    mockNodes.forEach(node => {
+    nodes.forEach(node => {
         const card = document.createElement('div');
-        card.className = `node ${node.status}`;
+        card.className = 'node';
         card.style.left = `${node.x}px`;
         card.style.top = `${node.y}px`;
 
-        const progressPercent = (node.completed / node.tasks) * 100;
-        const statusClass = node.status === 'done' ? 'status-done' : (node.status === 'progress' ? 'status-progress' : 'status-todo');
-        const statusText = node.status === 'done' ? 'Завершено' : (node.status === 'progress' ? 'В процессе' : 'В плане');
-
         card.innerHTML = `
-            <div class="node-status ${statusClass}">${statusText}</div>
+            <div class="node-status">В ПЛАНЕ</div>
             <h3>${node.title}</h3>
-            <div class="progress-container">
-                <div class="progress-label">
-                    <span>${node.completed}/${node.tasks} задач</span>
-                    <span>${Math.round(progressPercent)}%</span>
-                </div>
-                <div class="progress-track">
-                    <div class="progress-bar" style="width: ${progressPercent}%; background: ${node.status === 'done' ? 'var(--node-done)' : 'var(--accent)'}"></div>
-                </div>
-            </div>
+            <div class="progress-track"></div>
         `;
 
         card.onclick = (e) => {
+            if (isDraggingNode) return;
             e.stopPropagation();
             showNodeDetails(node);
+        };
+
+        card.onmousedown = (e) => {
+            if (e.button !== 0) return;
+            e.stopPropagation();
+
+            isDraggingNode = true;
+            draggedNodeElement = card;
+            draggedNodeData = node;
+
+            dragStartX = e.clientX / scale - node.x;
+            dragStartY = e.clientY / scale - node.y;
+
+            card.style.cursor = 'grabbing';
         };
 
         nodesLayer.appendChild(card);
     });
 }
 
-// --- ВЗАИМОДЕЙСТВИЕ ---
+function renderEdges(nodes) {
+    svgLayer.innerHTML = '';
+    nodes.forEach(node => {
+        if (node.parentNodeId) {
+            const parent = nodes.find(n => n.id === node.parentNodeId);
+            if (parent) {
+                const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+                const x1 = parent.x + NODE_WIDTH;
+                const y1 = parent.y + NODE_HEIGHT / 2;
+                const x2 = node.x;
+                const y2 = node.y + NODE_HEIGHT / 2;
+                const cp = x1 + (x2 - x1) / 2;
+                path.setAttribute("d", `M ${x1} ${y1} C ${cp} ${y1}, ${cp} ${y2}, ${x2} ${y2}`);
+                path.setAttribute("fill", "none");
+                path.setAttribute("stroke", "var(--primary)");
+                path.setAttribute("stroke-width", "2");
+                path.setAttribute("opacity", "0.4");
+                svgLayer.appendChild(path);
+            }
+        }
+    });
+}
+
+window.onmousemove = (e) => {
+    if (isDraggingNode && draggedNodeElement) {
+        const newX = e.clientX / scale - dragStartX;
+        const newY = e.clientY / scale - dragStartY;
+
+        draggedNodeElement.style.left = `${newX}px`;
+        draggedNodeElement.style.top = `${newY}px`;
+
+        draggedNodeData.x = newX;
+        draggedNodeData.y = newY;
+
+        renderEdges(roadmapData.nodes);
+    }
+    else if (isPanning) {
+        pointX = e.clientX - startPanX;
+        pointY = e.clientY - startPanY;
+        updateTransform();
+    }
+};
+
+window.onmouseup = async () => {
+    if (isDraggingNode && draggedNodeData) {
+        saveNodePosition(draggedNodeData);
+    }
+    isDraggingNode = false;
+    isPanning = false;
+    draggedNodeElement = null;
+    container.style.cursor = 'grab';
+};
+
+async function saveNodePosition(node) {
+    const updated = {
+        title: node.title,
+        description: node.description,
+        x: Math.round(node.x),
+        y: Math.round(node.y),
+        parentNodeId: node.parentNodeId
+    };
+    await fetch(`${API_URL}/nodes/${node.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updated)
+    });
+}
 
 function showNodeDetails(node) {
-    const panel = document.getElementById('details-panel');
-    document.getElementById('node-detail-title').innerText = node.title;
-    document.getElementById('node-detail-desc').innerText = node.desc;
-    document.getElementById('node-detail-progress').innerText = `${node.completed}/${node.tasks} задач`;
-    panel.classList.add('open');
+    currentNode = node;
+    document.getElementById('node-edit-title').value = node.title || "";
+    document.getElementById('node-edit-desc').value = node.description || "";
+    document.getElementById('node-edit-id').innerText = node.id;
+    document.getElementById('node-modal').classList.add('active');
 }
 
 function closeDetails() {
-    document.getElementById('details-panel').classList.remove('open');
+    document.getElementById('node-modal').classList.remove('active');
+    currentNode = null;
 }
 
-// Управление холстом (Zoom & Pan)
-container.addEventListener('wheel', (e) => {
-    e.preventDefault();
-    const rect = container.getBoundingClientRect();
-    const mouseX = e.clientX - rect.left;
-    const mouseY = e.clientY - rect.top;
+function handleOverlayClick(e) { if (e.target.id === 'node-modal') closeDetails(); }
 
-    const delta = -e.deltaY;
-    const factor = Math.min(Math.max(Math.pow(1.1, delta / 200), 0.1), 2);
-    const newScale = Math.min(Math.max(scale * factor, 0.2), 3);
+document.getElementById('btnSaveNode').onclick = async () => {
+    if (!currentNode) return;
+    const updated = {
+        title: document.getElementById('node-edit-title').value,
+        description: document.getElementById('node-edit-desc').value,
+        x: currentNode.x,
+        y: currentNode.y,
+        parentNodeId: currentNode.parentNodeId
+    };
+    const res = await fetch(`${API_URL}/nodes/${currentNode.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updated)
+    });
+    if (res.ok) { closeDetails(); loadRoadmap(); }
+};
 
-    pointX = mouseX - (mouseX - pointX) * (newScale / scale);
-    pointY = mouseY - (mouseY - pointY) * (newScale / scale);
-
-    scale = newScale;
+function centerOnNode(node) {
+    pointX = (window.innerWidth / 2) - node.x - (NODE_WIDTH / 2);
+    pointY = (window.innerHeight / 2) - node.y - (NODE_HEIGHT / 2);
     updateTransform();
-}, { passive: false });
-
-container.addEventListener('mousedown', (e) => {
-    if (e.target.closest('.node')) return;
-    isDragging = true;
-    startX = e.clientX - pointX;
-    startY = e.clientY - pointY;
-    container.style.cursor = 'grabbing';
-});
-
-window.addEventListener('mousemove', (e) => {
-    if (!isDragging) return;
-    pointX = e.clientX - startX;
-    pointY = e.clientY - startY;
-    updateTransform();
-});
-
-window.addEventListener('mouseup', () => {
-    isDragging = false;
-    container.style.cursor = 'grab';
-});
+}
 
 function updateTransform() {
     content.style.transform = `translate(${pointX}px, ${pointY}px) scale(${scale})`;
 }
 
-// Кнопка создания (Заглушка)
-document.getElementById('btnCreateNode').onclick = () => {
-    const btn = document.getElementById('btnCreateNode');
-    const originalText = btn.innerHTML;
-    btn.innerHTML = "⏳ Отправка...";
-    btn.disabled = true;
-
-    // Имитируем запрос на сервер
-    setTimeout(() => {
-        alert("Запрос отправлен на сервер (заглушка)! Логику добавления реализует бэкенд-разработчик.");
-        btn.innerHTML = originalText;
-        btn.disabled = false;
-    }, 1500);
+container.onwheel = (e) => {
+    e.preventDefault();
+    const rect = container.getBoundingClientRect();
+    const mouseX = e.clientX - rect.left;
+    const mouseY = e.clientY - rect.top;
+    const factor = Math.pow(1.1, -e.deltaY / 200);
+    const newScale = Math.min(Math.max(scale * factor, 0.1), 3);
+    pointX = mouseX - (mouseX - pointX) * (newScale / scale);
+    pointY = mouseY - (mouseY - pointY) * (newScale / scale);
+    scale = newScale;
+    updateTransform();
 };
 
-function copyKey() {
-    const keyText = document.getElementById('roadmapKey').innerText;
-    navigator.clipboard.writeText(keyText).then(() => {
-        const status = document.getElementById('copyStatus');
-        status.style.display = 'inline';
-        setTimeout(() => status.style.display = 'none', 2000);
-    });
-}
+container.onmousedown = (e) => {
+    if(e.target === container || e.target === nodesLayer) {
+        isPanning = true;
+        startPanX = e.clientX - pointX;
+        startPanY = e.clientY - pointY;
+        container.style.cursor = 'grabbing';
+    }
+};
 
+function applyTheme() { document.documentElement.setAttribute('data-theme', localStorage.getItem('theme') || 'light'); }
 function switchThemeToggle() {
-    const current = document.documentElement.getAttribute('data-theme');
-    const next = current === 'dark' ? 'light' : 'dark';
+    const next = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
     document.documentElement.setAttribute('data-theme', next);
     localStorage.setItem('theme', next);
 }
+function copyKey() {
+    navigator.clipboard.writeText(document.getElementById('roadmapKey').innerText);
+    const status = document.getElementById('copyStatus');
+    status.style.display = 'inline';
+    setTimeout(() => status.style.display = 'none', 2000);
+}
 
-// Запуск
+document.getElementById('btnCreateNode').onclick = async () => {
+    const key = new URLSearchParams(window.location.search).get('key');
+    const newNode = { title: "Новая тема", description: "", x: 3000, y: 3000 };
+    const res = await fetch(`${API_URL}/${key}/nodes`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newNode)
+    });
+    if (res.ok) loadRoadmap();
+};
+
 applyTheme();
-renderNodes();
-renderEdges();
-updateTransform();
+loadRoadmap();

@@ -1,88 +1,57 @@
-<!--<!DOCTYPE html>-->
-<!--<html lang="ru">-->
-<!--<head>-->
-<!--    <meta charset="UTF-8">-->
-<!--    <meta name="viewport" content="width=device-width, initial-scale=1.0">-->
-<!--    <title>RoadMap | Просмотр холста</title>-->
-<!--    <link rel="stylesheet" href="roadmap-style.css">-->
-<!--</head>-->
-<!--<body>-->
-<!--<header class="top-bar">-->
-<!--    <button onclick="location.href='../start_page/index.html'" class="btn-back">← Назад</button>-->
-<!--    <div class="info">-->
-<!--        <h1 id="roadmapTitle">Загрузка...</h1>-->
-<!--        <div class="key-container">-->
-<!--            <span>Ключ доступа: </span>-->
-<!--            <code id="roadmapKey" onclick="copyKey()" title="Нажмите, чтобы скопировать">&#45;&#45;&#45;&#45;</code>-->
-<!--            <small id="copyStatus" style="display: none; color: #58a6ff; margin-left: 10px;">Скопировано!</small>-->
-<!--        </div>-->
-<!--    </div>-->
-<!--</header>-->
-<!--<main id="canvas-container">-->
-<!--    <div id="canvas-content">-->
-<!--        <div id="canvas-placeholder">-->
-<!--            <p>Здесь будет холст с узлами</p>-->
-<!--        </div>-->
-<!--    </div>-->
-<!--</main>-->
-
-<!--<script src="roadmap-logic.js"></script>-->
-<!--</body>-->
-<!--</html>-->
-
 <!DOCTYPE html>
 <html lang="ru">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>RoadMap | Просмотр холста</title>
     <link rel="stylesheet" href="roadmap-style.css">
 </head>
-
 <body>
 <header class="top-bar">
     <button onclick="location.href='../start_page/index.html'" class="btn-back">← Назад</button>
     <div class="info">
-        <h1 id="roadmapTitle">План обучения: Веб-разработка</h1>
+        <h1 id="roadmapTitle">Загрузка плана...</h1>
         <div class="key-container">
             <span>Ключ: </span>
-            <code id="roadmapKey">7059e041</code>
+            <code id="roadmapKey">--------</code>
             <button class="icon-btn" onclick="copyKey()" title="Копировать">📋</button>
             <span id="copyStatus">Скопировано!</span>
         </div>
     </div>
     <div class="header-actions">
-        <button id="btnCreateNode" class="btn-plus" title="Добавить новую тему">
-            <span>+</span> Добавить занятие
-        </button>
-        <button class="btn-theme" onclick="switchThemeToggle()" title="Сменить тему">🌓</button>
+        <button id="btnCreateNode" class="btn-plus"><span>+</span> Добавить занятие</button>
+        <button class="btn-theme" onclick="switchThemeToggle()">🌓</button>
     </div>
 </header>
+
 <main id="canvas-container">
     <div id="canvas-content">
-        <!-- SVG для отрисовки связей (ребер) -->
         <svg id="canvas-svg"></svg>
-        <!-- Слой для прямоугольных узлов (занятий) -->
         <div id="nodes-layer"></div>
     </div>
 
-    <!-- Модалка с деталями темы -->
-    <div id="details-panel" class="side-panel">
-        <div class="panel-content">
-            <button class="close-btn" onclick="closeDetails()">×</button>
-            <h2 id="node-detail-title">Тема</h2>
-            <div class="progress-info">
-                <span>Прогресс обучения:</span>
-                <span id="node-detail-progress">3/8 задач</span>
+    <div id="node-modal" class="modal-overlay" onclick="handleOverlayClick(event)">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h2>Редактирование темы</h2>
+                <button class="close-modal-btn" onclick="closeDetails()">×</button>
             </div>
-            <p id="node-detail-desc"></p>
-            <div class="task-list-mock">
-                <!-- Просто визуальные заглушки задач -->
-                <div class="task-item done">✓ Базовый синтаксис</div>
-                <div class="task-item done">✓ Работа с DOM</div>
-                <div class="task-item">○ Асинхронные запросы</div>
-                <div class="task-item">○ Тестирование</div>
+            <div class="modal-body">
+                <div class="edit-group">
+                    <label>Название темы</label>
+                    <input type="text" id="node-edit-title" placeholder="Напр. Основы JS">
+                </div>
+                <div class="edit-group">
+                    <label>Описание</label>
+                    <textarea id="node-edit-desc" rows="5" placeholder="О чем эта тема?"></textarea>
+                </div>
+                <div class="modal-footer-info">
+                    ID в базе: <span id="node-edit-id"></span>
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button id="btnSaveNode" class="btn-save">Сохранить</button>
+                <button class="btn-cancel" onclick="closeDetails()">Отмена</button>
             </div>
         </div>
     </div>
@@ -90,5 +59,4 @@
 
 <script src="roadmap-logic.js"></script>
 </body>
-
 </html>

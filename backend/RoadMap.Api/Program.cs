@@ -23,6 +23,8 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 
 var app = builder.Build();
 
+app.UseRouting();
+
 app.UseCors("AllowAll");
 
 if (app.Environment.IsDevelopment())
@@ -35,7 +37,9 @@ if (app.Environment.IsDevelopment())
     });
 }
 
-app.UseHttpsRedirection();
+app.UseAuthorization();
+
+// app.UseHttpsRedirection();
 
 app.MapControllers();
 
