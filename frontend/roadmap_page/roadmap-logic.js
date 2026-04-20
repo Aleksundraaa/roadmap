@@ -1,21 +1,21 @@
 const API_URL = 'http://localhost:5000/api/Roadmap';
-let roadmapData = null;
-let currentNode = null;
-
-let isDraggingNode = false;
-let draggedNodeElement = null;
-let draggedNodeData = null;
-let dragStartX = 0;
-let dragStartY = 0;
-
 const NODE_WIDTH = 200;
 const NODE_HEIGHT = 120;
+
+let roadmapData = null;
+let currentNode = null;
 
 let scale = 1;
 let pointX = 0;
 let pointY = 0;
 let isPanning = false;
 let startPanX, startPanY;
+
+let isDraggingNode = false;
+let draggedNodeElement = null;
+let draggedNodeData = null;
+let dragStartX = 0;
+let dragStartY = 0;
 
 const container = document.getElementById('canvas-container');
 const content = document.getElementById('canvas-content');
@@ -44,6 +44,32 @@ async function loadRoadmap() {
         }
     } catch (e) {
         console.error("Ошибка загрузки:", e);
+    }
+}
+
+async function handleSave() {
+    if (!currentNode) return;
+
+    const updatedData = {
+        title: document.getElementById('node-edit-title').value,
+        description: document.getElementById('node-edit-desc').value,
+        x: currentNode.x,
+        y: currentNode.y,
+        parentNodeId: currentNode.parentNodeId
+    };
+
+    try {
+        const res = await fetch(`${API_URL}/nodes/${currentNode.id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(updatedData)
+        });
+        if (res.ok) {
+            closeDetails();
+            await loadRoadmap();
+        }
+    } catch (e) {
+        alert("Ошибка при сохранении");
     }
 }
 
@@ -76,36 +102,12 @@ function renderNodes(nodes) {
 
             dragStartX = e.clientX / scale - node.x;
             dragStartY = e.clientY / scale - node.y;
-
             card.style.cursor = 'grabbing';
         };
 
         nodesLayer.appendChild(card);
     });
 }
-
-document.getElementById('btnDeleteNode').onclick = async () => {
-    if (!currentNode) return;
-
-    if (!confirm(`Вы уверены, что хотите удалить тему "${currentNode.title}"?`)) {
-        return;
-    }
-
-    try {
-        const res = await fetch(`${API_URL}/nodes/${currentNode.id}`, {
-            method: 'DELETE'
-        });
-
-        if (res.ok) {
-            closeDetails();
-            await loadRoadmap();
-        } else {
-            alert("Не удалось удалить ноду");
-        }
-    } catch (e) {
-        console.error("Ошибка при удалении:", e);
-    }
-};
 
 function renderEdges(nodes) {
     svgLayer.innerHTML = '';
@@ -130,17 +132,52 @@ function renderEdges(nodes) {
     });
 }
 
+function showNodeDetails(node) {
+    currentNode = node;
+    document.getElementById('node-edit-title').value = node.title || "";
+    document.getElementById('node-edit-desc').value = node.description || "";
+    document.getElementById('node-modal').classList.add('active');
+    document.getElementById('node-edit-title').focus();
+}
+
+function closeDetails() {
+    document.getElementById('node-modal').classList.remove('active');
+    currentNode = null;
+}
+
+document.getElementById('btnSaveNode').onclick = handleSave;
+
+document.getElementById('btnDeleteNode').onclick = async () => {
+    if (!currentNode || !confirm(`Удалить тему "${currentNode.title}"?`)) return;
+    const res = await fetch(`${API_URL}/nodes/${currentNode.id}`, { method: 'DELETE' });
+    if (res.ok) { closeDetails(); loadRoadmap(); }
+};
+
+document.getElementById('node-edit-title').onkeydown = (e) => {
+    if (e.key === 'Enter') {
+        e.preventDefault();
+        handleSave();
+    }
+};
+
+document.getElementById('node-edit-desc').onkeydown = (e) => {
+    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+        e.preventDefault();
+        handleSave();
+    }
+};
+
+window.onkeydown = (e) => { if (e.key === 'Escape') closeDetails(); };
+function handleOverlayClick(e) { if (e.target.id === 'node-modal') closeDetails(); }
+
 window.onmousemove = (e) => {
     if (isDraggingNode && draggedNodeElement) {
         const newX = e.clientX / scale - dragStartX;
         const newY = e.clientY / scale - dragStartY;
-
         draggedNodeElement.style.left = `${newX}px`;
         draggedNodeElement.style.top = `${newY}px`;
-
         draggedNodeData.x = newX;
         draggedNodeData.y = newY;
-
         renderEdges(roadmapData.nodes);
     }
     else if (isPanning) {
@@ -152,58 +189,23 @@ window.onmousemove = (e) => {
 
 window.onmouseup = async () => {
     if (isDraggingNode && draggedNodeData) {
-        saveNodePosition(draggedNodeData);
+        const updated = {
+            title: draggedNodeData.title,
+            description: draggedNodeData.description,
+            x: Math.round(draggedNodeData.x),
+            y: Math.round(draggedNodeData.y),
+            parentNodeId: draggedNodeData.parentNodeId
+        };
+        await fetch(`${API_URL}/nodes/${draggedNodeData.id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(updated)
+        });
     }
     isDraggingNode = false;
     isPanning = false;
     draggedNodeElement = null;
     container.style.cursor = 'grab';
-};
-
-async function saveNodePosition(node) {
-    const updated = {
-        title: node.title,
-        description: node.description,
-        x: Math.round(node.x),
-        y: Math.round(node.y),
-        parentNodeId: node.parentNodeId
-    };
-    await fetch(`${API_URL}/nodes/${node.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updated)
-    });
-}
-
-function showNodeDetails(node) {
-    currentNode = node;
-    document.getElementById('node-edit-title').value = node.title || "";
-    document.getElementById('node-edit-desc').value = node.description || "";
-    document.getElementById('node-modal').classList.add('active');
-}
-
-function closeDetails() {
-    document.getElementById('node-modal').classList.remove('active');
-    currentNode = null;
-}
-
-function handleOverlayClick(e) { if (e.target.id === 'node-modal') closeDetails(); }
-
-document.getElementById('btnSaveNode').onclick = async () => {
-    if (!currentNode) return;
-    const updated = {
-        title: document.getElementById('node-edit-title').value,
-        description: document.getElementById('node-edit-desc').value,
-        x: currentNode.x,
-        y: currentNode.y,
-        parentNodeId: currentNode.parentNodeId
-    };
-    const res = await fetch(`${API_URL}/nodes/${currentNode.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updated)
-    });
-    if (res.ok) { closeDetails(); loadRoadmap(); }
 };
 
 function centerOnNode(node) {
@@ -218,8 +220,14 @@ function updateTransform() {
 
 container.onwheel = (e) => {
     e.preventDefault();
+    const rect = container.getBoundingClientRect();
+    const mouseX = e.clientX - rect.left;
+    const mouseY = e.clientY - rect.top;
     const factor = Math.pow(1.1, -e.deltaY / 200);
-    scale = Math.min(Math.max(scale * factor, 0.1), 3);
+    const newScale = Math.min(Math.max(scale * factor, 0.1), 3);
+    pointX = mouseX - (mouseX - pointX) * (newScale / scale);
+    pointY = mouseY - (mouseY - pointY) * (newScale / scale);
+    scale = newScale;
     updateTransform();
 };
 
@@ -232,19 +240,6 @@ container.onmousedown = (e) => {
     }
 };
 
-function applyTheme() { document.documentElement.setAttribute('data-theme', localStorage.getItem('theme') || 'light'); }
-function switchThemeToggle() {
-    const next = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
-    document.documentElement.setAttribute('data-theme', next);
-    localStorage.setItem('theme', next);
-}
-function copyKey() {
-    navigator.clipboard.writeText(document.getElementById('roadmapKey').innerText);
-    const status = document.getElementById('copyStatus');
-    status.style.display = 'inline';
-    setTimeout(() => status.style.display = 'none', 2000);
-}
-
 document.getElementById('btnCreateNode').onclick = async () => {
     const key = new URLSearchParams(window.location.search).get('key');
     const newNode = { title: "Новая тема", description: "", x: 3000, y: 3000 };
@@ -255,6 +250,23 @@ document.getElementById('btnCreateNode').onclick = async () => {
     });
     if (res.ok) loadRoadmap();
 };
+
+function switchThemeToggle() {
+    const next = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', next);
+    localStorage.setItem('theme', next);
+}
+
+function applyTheme() {
+    document.documentElement.setAttribute('data-theme', localStorage.getItem('theme') || 'light');
+}
+
+function copyKey() {
+    navigator.clipboard.writeText(document.getElementById('roadmapKey').innerText);
+    const status = document.getElementById('copyStatus');
+    status.style.display = 'inline';
+    setTimeout(() => status.style.display = 'none', 2000);
+}
 
 applyTheme();
 loadRoadmap();
