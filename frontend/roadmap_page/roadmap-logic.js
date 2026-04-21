@@ -396,5 +396,54 @@ function copyKey() {
     setTimeout(() => status.style.display = 'none', 2000);
 }
 
+function handleSearch() {
+    const query = document.getElementById('nodeSearch').value.toLowerCase();
+    const resultsContainer = document.getElementById('searchResults');
+
+    if (!query) {
+        resultsContainer.style.display = 'none';
+        return;
+    }
+
+    const filtered = roadmapData.nodes.filter(n =>
+        n.title.toLowerCase().includes(query)
+    );
+
+    if (filtered.length > 0) {
+        resultsContainer.innerHTML = filtered.map(node => `
+            <div class="search-item" onclick="goToNode(${node.id})">
+                ${node.title}
+            </div>
+        `).join('');
+        resultsContainer.style.display = 'block';
+    } else {
+        resultsContainer.style.display = 'none';
+    }
+}
+
+function goToNode(nodeId) {
+    const node = roadmapData.nodes.find(n => n.id === nodeId);
+    if (node) {
+        centerOnNode(node);
+
+        const nodeElements = document.querySelectorAll('.node');
+        nodeElements.forEach(el => {
+            if (parseInt(el.style.left) === Math.round(node.x) &&
+                parseInt(el.style.top) === Math.round(node.y)) {
+                el.style.boxShadow = "0 0 20px var(--primary)";
+                setTimeout(() => el.style.boxShadow = "", 2000);
+            }
+        });
+    }
+    document.getElementById('nodeSearch').value = '';
+    document.getElementById('searchResults').style.display = 'none';
+}
+
+window.addEventListener('click', (e) => {
+    if (!e.target.closest('.search-container')) {
+        document.getElementById('searchResults').style.display = 'none';
+    }
+});
+
 applyTheme();
 loadRoadmap();

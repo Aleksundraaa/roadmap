@@ -18,6 +18,10 @@
             <span id="copyStatus">Скопировано!</span>
         </div>
     </div>
+    <div class="search-container">
+        <input type="text" id="nodeSearch" placeholder="Поиск темы..." oninput="handleSearch()">
+        <div id="searchResults" class="search-results"></div>
+    </div>
     <div class="header-actions">
         <button id="btnCreateNode" class="btn-plus"><span>+</span> Добавить занятие</button>
         <button class="btn-theme" onclick="switchThemeToggle()">🌓</button>

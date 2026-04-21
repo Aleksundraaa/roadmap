@@ -314,6 +314,50 @@ select {
     pointer-events: none;
 }
 
+.search-container {
+    position: relative;
+    margin-left: 20px;
+    flex: 1;
+    max-width: 300px;
+}
+
+#nodeSearch {
+    width: 100%;
+    padding: 8px 12px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    color: var(--text);
+}
+
+.search-results {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    max-height: 200px;
+    overflow-y: auto;
+    z-index: 1000;
+    display: none; /* Скрыт по умолчанию */
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.search-item {
+    padding: 10px;
+    cursor: pointer;
+    border-bottom: 1px solid var(--border);
+    transition: background 0.2s;
+}
+
+.search-item:hover {
+    background: var(--bg);
+}
+
+.search-item:last-child { border-bottom: none; }
+
 #copyStatus {
     display: none;
     color: #22c55e;
