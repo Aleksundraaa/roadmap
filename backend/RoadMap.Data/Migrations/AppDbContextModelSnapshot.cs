@@ -31,6 +31,10 @@ namespace RoadMap.Data.Migrations
                     b.Property<int>("RoadmapId")
                         .HasColumnType("INTEGER");
 
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("Title")
                         .IsRequired()
                         .HasColumnType("TEXT");

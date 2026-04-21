@@ -46,6 +46,14 @@
                     <textarea id="node-edit-desc" rows="5" placeholder="О чем эта тема?"></textarea>
                 </div>
             </div>
+            <div class="edit-group">
+                <label>Статус</label>
+                <select id="node-edit-status">
+                    <option value="todo">В плане</option>
+                    <option value="doing">В процессе</option>
+                    <option value="done">Завершено</option>
+                </select>
+            </div>
             <div class="modal-actions">
                 <button id="btnSaveNode" class="btn-save">Сохранить</button>
                 <button class="btn-cancel" onclick="closeDetails()">Отмена</button>

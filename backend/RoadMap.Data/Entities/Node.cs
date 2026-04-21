@@ -10,6 +10,7 @@ public class Node
     public double X { get; set; }
     public double Y { get; set; }
     public int RoadmapId { get; set; }
+    public string Status { get; set; } = "todo"; // todo, doing, done
 
     [JsonIgnore] 
     public Roadmap Roadmap { get; set; } = null!;

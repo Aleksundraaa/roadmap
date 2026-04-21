@@ -1,7 +1,7 @@
 const API_URL = 'http://localhost:5000/api/Roadmap';
 const NODE_WIDTH = 200;
 const NODE_HEIGHT = 120;
-
+let connectionSource = null;
 let roadmapData = null;
 let currentNode = null;
 
@@ -55,37 +55,76 @@ async function handleSave() {
         description: document.getElementById('node-edit-desc').value,
         x: currentNode.x,
         y: currentNode.y,
-        parentNodeId: currentNode.parentNodeId
+        parentNodeId: currentNode.parentNodeId,
+        status: document.getElementById('node-edit-status').value
     };
 
     try {
         const res = await fetch(`${API_URL}/nodes/${currentNode.id}`, {
             method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {'Content-Type': 'application/json'},
             body: JSON.stringify(updatedData)
         });
+
         if (res.ok) {
             closeDetails();
             await loadRoadmap();
+        } else {
+            const errorData = await res.json();
+            console.error("Ошибка сервера:", errorData);
+            alert("Не удалось сохранить изменения");
         }
     } catch (e) {
-        alert("Ошибка при сохранении");
+        console.error("Ошибка при сохранении:", e);
+        alert("Ошибка связи с сервером");
     }
 }
 
 function renderNodes(nodes) {
+    if (!nodes) return;
     nodesLayer.innerHTML = '';
+
+    const statusMap = {
+        'todo': {text: 'В ПЛАНЕ', class: 'status-todo'},
+        'doing': {text: 'В ПРОЦЕССЕ', class: 'status-doing'},
+        'done': {text: 'ЗАВЕРШЕНО', class: 'status-done'}
+    };
+
     nodes.forEach(node => {
         const card = document.createElement('div');
         card.className = 'node';
-        card.style.left = `${node.x}px`;
-        card.style.top = `${node.y}px`;
+        card.style.left = `${Math.round(node.x)}px`;
+        card.style.top = `${Math.round(node.y)}px`;
+
+        const statusInfo = statusMap[node.status || 'todo'];
+
+        if (connectionSource && connectionSource.id === node.id) {
+            card.style.outline = "3px solid var(--primary)";
+        }
 
         card.innerHTML = `
-            <div class="node-status">В ПЛАНЕ</div>
+            <div class="node-status ${statusInfo.class}">${statusInfo.text}</div>
             <h3>${node.title}</h3>
-            <div class="progress-track"></div>
-        `;
+            <p class="node-desc">${node.description || "Нет описания"}</p>
+            <div class="progress-track">
+                <div class="progress-bar ${node.status || 'todo'}"></div>
+            </div>`;
+
+        card.onclick = async (e) => {
+            if (e.altKey) {
+                e.stopPropagation();
+                if (!connectionSource) {
+                    connectionSource = node;
+                    renderNodes(roadmapData.nodes);
+                } else {
+                    if (connectionSource.id !== node.id) {
+                        await connectNodes(connectionSource.id, node);
+                    }
+                    connectionSource = null;
+                    await loadRoadmap();
+                }
+            }
+        };
 
         card.ondblclick = (e) => {
             e.stopPropagation();
@@ -93,51 +132,131 @@ function renderNodes(nodes) {
         };
 
         card.onmousedown = (e) => {
+            if (e.altKey) return;
             if (e.button !== 0) return;
             e.stopPropagation();
-
             isDraggingNode = true;
             draggedNodeElement = card;
             draggedNodeData = node;
-
             dragStartX = e.clientX / scale - node.x;
             dragStartY = e.clientY / scale - node.y;
             card.style.cursor = 'grabbing';
         };
-
         nodesLayer.appendChild(card);
     });
 }
 
 function renderEdges(nodes) {
+    if (!nodes || !svgLayer) return;
     svgLayer.innerHTML = '';
+
+    const colors = {
+        todo: '#8B0000',
+        doing: '#f59e0b',
+        done: '#10b981',
+        default: '#0088ff'
+    };
+
     nodes.forEach(node => {
         if (node.parentNodeId) {
             const parent = nodes.find(n => n.id === node.parentNodeId);
             if (parent) {
                 const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+
+                let edgeColor = colors.default;
+                const s1 = parent.status || 'todo';
+                const s2 = node.status || 'todo';
+
+                if (s1 === s2) {
+                    edgeColor = colors[s1];
+                } else if ((s1 === 'todo' && s2 === 'doing') || (s1 === 'doing' && s2 === 'todo')) {
+                    edgeColor = '#bc4f06';
+                } else if ((s1 === 'doing' && s2 === 'done') || (s1 === 'done' && s2 === 'doing')) {
+                    edgeColor = '#82ab46';
+                }
+
                 const x1 = parent.x + NODE_WIDTH;
                 const y1 = parent.y + NODE_HEIGHT / 2;
                 const x2 = node.x;
                 const y2 = node.y + NODE_HEIGHT / 2;
                 const cp = x1 + (x2 - x1) / 2;
+
                 path.setAttribute("d", `M ${x1} ${y1} C ${cp} ${y1}, ${cp} ${y2}, ${x2} ${y2}`);
                 path.setAttribute("fill", "none");
-                path.setAttribute("stroke", "var(--primary)");
-                path.setAttribute("stroke-width", "2");
-                path.setAttribute("opacity", "0.4");
+                path.setAttribute("stroke", edgeColor);
+                path.setAttribute("stroke-width", "6");
+                path.setAttribute("opacity", "0.8");
+                path.style.cursor = "pointer";
+
+                path.ondblclick = async (e) => {
+                    e.stopPropagation();
+                    if (confirm(`Удалить связь между "${parent.title}" и "${node.title}"?`)) {
+                        await deleteEdge(node);
+                    }
+                };
+
                 svgLayer.appendChild(path);
             }
         }
     });
 }
 
+async function deleteEdge(childNode) {
+    const updatedData = {
+        title: childNode.title,
+        description: childNode.description,
+        x: childNode.x,
+        y: childNode.y,
+        parentNodeId: null,
+        status: childNode.status || "todo"
+    };
+
+    try {
+        const res = await fetch(`${API_URL}/nodes/${childNode.id}`, {
+            method: 'PUT',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(updatedData)
+        });
+
+        if (res.ok) {
+            await loadRoadmap();
+        } else {
+            alert("Не удалось удалить связь на сервере");
+        }
+    } catch (e) {
+        console.error("Ошибка при удалении связи:", e);
+    }
+}
+
+async function connectNodes(parentId, childNode) {
+    const updatedData = {
+        title: childNode.title,
+        description: childNode.description,
+        x: childNode.x,
+        y: childNode.y,
+        parentNodeId: parentId,
+        status: childNode.status || "todo"
+    };
+
+    try {
+        const res = await fetch(`${API_URL}/nodes/${childNode.id}`, {
+            method: 'PUT',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(updatedData)
+        });
+        if (!res.ok) throw new Error("Ошибка сервера при создании связи");
+    } catch (e) {
+        console.error(e);
+        alert("Не удалось сохранить связь");
+    }
+}
+
 function showNodeDetails(node) {
     currentNode = node;
     document.getElementById('node-edit-title').value = node.title || "";
     document.getElementById('node-edit-desc').value = node.description || "";
+    document.getElementById('node-edit-status').value = node.status || "todo";
     document.getElementById('node-modal').classList.add('active');
-    document.getElementById('node-edit-title').focus();
 }
 
 function closeDetails() {
@@ -149,8 +268,11 @@ document.getElementById('btnSaveNode').onclick = handleSave;
 
 document.getElementById('btnDeleteNode').onclick = async () => {
     if (!currentNode || !confirm(`Удалить тему "${currentNode.title}"?`)) return;
-    const res = await fetch(`${API_URL}/nodes/${currentNode.id}`, { method: 'DELETE' });
-    if (res.ok) { closeDetails(); loadRoadmap(); }
+    const res = await fetch(`${API_URL}/nodes/${currentNode.id}`, {method: 'DELETE'});
+    if (res.ok) {
+        closeDetails();
+        loadRoadmap();
+    }
 };
 
 document.getElementById('node-edit-title').onkeydown = (e) => {
@@ -167,8 +289,13 @@ document.getElementById('node-edit-desc').onkeydown = (e) => {
     }
 };
 
-window.onkeydown = (e) => { if (e.key === 'Escape') closeDetails(); };
-function handleOverlayClick(e) { if (e.target.id === 'node-modal') closeDetails(); }
+window.onkeydown = (e) => {
+    if (e.key === 'Escape') closeDetails();
+};
+
+function handleOverlayClick(e) {
+    if (e.target.id === 'node-modal') closeDetails();
+}
 
 window.onmousemove = (e) => {
     if (isDraggingNode && draggedNodeElement) {
@@ -179,8 +306,7 @@ window.onmousemove = (e) => {
         draggedNodeData.x = newX;
         draggedNodeData.y = newY;
         renderEdges(roadmapData.nodes);
-    }
-    else if (isPanning) {
+    } else if (isPanning) {
         pointX = e.clientX - startPanX;
         pointY = e.clientY - startPanY;
         updateTransform();
@@ -194,11 +320,12 @@ window.onmouseup = async () => {
             description: draggedNodeData.description,
             x: Math.round(draggedNodeData.x),
             y: Math.round(draggedNodeData.y),
-            parentNodeId: draggedNodeData.parentNodeId
+            parentNodeId: draggedNodeData.parentNodeId,
+            status: draggedNodeData.status || "todo"
         };
         await fetch(`${API_URL}/nodes/${draggedNodeData.id}`, {
             method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {'Content-Type': 'application/json'},
             body: JSON.stringify(updated)
         });
     }
@@ -230,9 +357,11 @@ container.onwheel = (e) => {
     scale = newScale;
     updateTransform();
 };
-
 container.onmousedown = (e) => {
-    if(e.target === container || e.target === nodesLayer) {
+    if (e.altKey) return;
+
+    if (e.target === container || e.target === nodesLayer || e.target === svgLayer) {
+        e.preventDefault();
         isPanning = true;
         startPanX = e.clientX - pointX;
         startPanY = e.clientY - pointY;
@@ -242,10 +371,10 @@ container.onmousedown = (e) => {
 
 document.getElementById('btnCreateNode').onclick = async () => {
     const key = new URLSearchParams(window.location.search).get('key');
-    const newNode = { title: "Новая тема", description: "", x: 3000, y: 3000 };
+    const newNode = {title: "Новая тема", description: "", x: 3000, y: 3000};
     const res = await fetch(`${API_URL}/${key}/nodes`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {'Content-Type': 'application/json'},
         body: JSON.stringify(newNode)
     });
     if (res.ok) loadRoadmap();

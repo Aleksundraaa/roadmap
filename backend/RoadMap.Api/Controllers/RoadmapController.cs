@@ -78,8 +78,7 @@ public class RoadmapController : ControllerBase
         return Ok(node);
     }
 
-    public record UpdateNodeRequest(string Title, string? Description, double X, double Y, int? ParentNodeId);
-
+    public record UpdateNodeRequest(string Title, string? Description, double X, double Y, int? ParentNodeId, string Status);
     [HttpPut("nodes/{id}")]
     public async Task<IActionResult> UpdateNode(int id, [FromBody] UpdateNodeRequest request)
     {
@@ -91,7 +90,8 @@ public class RoadmapController : ControllerBase
         node.X = request.X;
         node.Y = request.Y;
         node.ParentNodeId = request.ParentNodeId;
-
+        node.Status = request.Status;
+        
         await _context.SaveChangesAsync();
         return Ok(node);
     }
