@@ -174,9 +174,9 @@ function renderEdges(nodes) {
                     edgeColor = '#82ab46';
                 }
 
-                const x1 = parent.x + NODE_WIDTH;
+                const x1 = parent.x + NODE_WIDTH / 2;
                 const y1 = parent.y + NODE_HEIGHT / 2;
-                const x2 = node.x;
+                const x2 = node.x + NODE_WIDTH / 2;
                 const y2 = node.y + NODE_HEIGHT / 2;
                 const cp = x1 + (x2 - x1) / 2;
 
