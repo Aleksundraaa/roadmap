@@ -363,3 +363,20 @@ select {
     color: #22c55e;
     margin-left: 10px;
 }
+
+.btn-danger-outline {
+    background: transparent;
+    color: #ff4d4d;
+    border: 1px solid #ff4d4d;
+    padding: 8px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    margin-right: 10px;
+    transition: all 0.2s;
+}
+
+.btn-danger-outline:hover {
+    background: #ff4d4d;
+    color: white;
+}

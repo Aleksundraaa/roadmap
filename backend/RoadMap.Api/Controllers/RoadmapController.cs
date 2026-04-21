@@ -31,7 +31,7 @@ public class RoadmapController : ControllerBase
 
         return Ok(roadmap);
     }
-    
+
     public record CreateRoadmapRequest(string Title);
 
     [HttpPost]
@@ -54,7 +54,7 @@ public class RoadmapController : ControllerBase
 
         return Ok(roadmap);
     }
-    
+
     public record AddNodeRequest(string Title, string? Description, double X, double Y);
 
     [HttpPost("{urlKey}/nodes")]
@@ -69,7 +69,7 @@ public class RoadmapController : ControllerBase
             Description = request.Description,
             X = request.X,
             Y = request.Y,
-            RoadmapId = roadmap.Id 
+            RoadmapId = roadmap.Id
         };
 
         _context.Nodes.Add(node);
@@ -78,7 +78,14 @@ public class RoadmapController : ControllerBase
         return Ok(node);
     }
 
-    public record UpdateNodeRequest(string Title, string? Description, double X, double Y, int? ParentNodeId, string Status);
+    public record UpdateNodeRequest(
+        string Title,
+        string? Description,
+        double X,
+        double Y,
+        int? ParentNodeId,
+        string Status);
+
     [HttpPut("nodes/{id}")]
     public async Task<IActionResult> UpdateNode(int id, [FromBody] UpdateNodeRequest request)
     {
@@ -91,11 +98,11 @@ public class RoadmapController : ControllerBase
         node.Y = request.Y;
         node.ParentNodeId = request.ParentNodeId;
         node.Status = request.Status;
-        
+
         await _context.SaveChangesAsync();
         return Ok(node);
     }
-    
+
     [HttpDelete("nodes/{id}")]
     public async Task<IActionResult> DeleteNode(int id)
     {
@@ -105,6 +112,20 @@ public class RoadmapController : ControllerBase
         _context.Nodes.Remove(node);
         await _context.SaveChangesAsync();
 
-        return NoContent(); 
+        return NoContent();
+    }
+
+    [HttpDelete("{key}")]
+    public async Task<IActionResult> DeleteRoadmap(string key)
+    {
+        var roadmap = await _context.Roadmaps
+            .Include(r => r.Nodes)
+            .FirstOrDefaultAsync(r => r.UrlKey == key);
+
+        if (roadmap == null) return NotFound(); 
+        _context.Roadmaps.Remove(roadmap);
+        await _context.SaveChangesAsync();
+
+        return Ok();
     }
 }

@@ -450,5 +450,34 @@ window.addEventListener('click', (e) => {
     }
 });
 
+document.getElementById('btnDeleteRoadmap').onclick = async () => {
+    const params = new URLSearchParams(window.location.search);
+    const key = params.get('key');
+    const title = document.getElementById('roadmapTitle').innerText;
+
+    if (!key) return;
+
+    const confirmMessage = confirm(`Вы уверены, что хотите полностью удалить холст "${title}"? Это действие нельзя отменить.`);
+
+    if (confirmMessage) {
+        try {
+            const res = await fetch(`${API_URL}/${key}`, {
+                method: 'DELETE'
+            });
+
+            if (res.ok) {
+                alert('Холст успешно удален.');
+                window.location.href = '../start_page/index.html';
+            } else {
+                const errorData = await res.json();
+                alert(`Ошибка при удалении: ${errorData.message || 'Не удалось удалить холст'}`);
+            }
+        } catch (err) {
+            console.error(err);
+            alert('Произошла ошибка при обращении к серверу.');
+        }
+    }
+};
+
 applyTheme();
 loadRoadmap();
