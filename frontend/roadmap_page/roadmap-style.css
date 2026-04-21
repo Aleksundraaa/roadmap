@@ -265,33 +265,28 @@ body {
     color: #f59e0b;
 }
 
-/* Оранжевый */
 .status-done {
     color: #10b981;
 }
 
-/* Зеленый */
 
-.progress-track {
+.node-line {
     height: 4px;
-    background: var(--border);
     border-radius: 2px;
-    margin-top: 10px;
-}
-
-.progress-bar.done {
+    margin-top: 12px;
     width: 100%;
-    background: #10b981;
 }
 
-.progress-bar.doing {
-    width: 50%;
-    background: #f59e0b;
+.node-line.todo {
+    background-color: darkred;
 }
 
-.progress-bar.todo {
-    width: 5%;
-    background: var(--text-dim);
+.node-line.doing {
+    background-color: #f59e0b;
+}
+
+.node-line.done {
+    background-color: #10b981;
 }
 
 select {

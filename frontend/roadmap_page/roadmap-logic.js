@@ -101,14 +101,13 @@ function renderNodes(nodes) {
         if (connectionSource && connectionSource.id === node.id) {
             card.style.outline = "3px solid var(--primary)";
         }
+        const currentStatus = node.status || 'todo';
 
         card.innerHTML = `
-            <div class="node-status ${statusInfo.class}">${statusInfo.text}</div>
-            <h3>${node.title}</h3>
-            <p class="node-desc">${node.description || "Нет описания"}</p>
-            <div class="progress-track">
-                <div class="progress-bar ${node.status || 'todo'}"></div>
-            </div>`;
+        <div class="node-status ${statusInfo.class}">${statusInfo.text}</div>
+        <h3>${node.title}</h3>
+        <p class="node-desc">${node.description || "Нет описания"}</p>
+        <div class="node-line ${currentStatus}"></div>`;
 
         card.onclick = async (e) => {
             if (e.altKey) {
@@ -184,7 +183,7 @@ function renderEdges(nodes) {
                 path.setAttribute("d", `M ${x1} ${y1} C ${cp} ${y1}, ${cp} ${y2}, ${x2} ${y2}`);
                 path.setAttribute("fill", "none");
                 path.setAttribute("stroke", edgeColor);
-                path.setAttribute("stroke-width", "6");
+                path.setAttribute("stroke-width", "4.5");
                 path.setAttribute("opacity", "0.8");
                 path.style.cursor = "pointer";
 
