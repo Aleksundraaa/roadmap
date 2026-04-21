@@ -7,39 +7,50 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<div class="container">
-    <header>
-        <h1 class="gradient-text">RoadMap</h1>
-        <p class="subtitle">Создать интерактивную дорожную карту онлайн</p>
-    </header>
+<div class="main-wrapper">
+    <div class="container">
+        <header>
+            <h1 class="gradient-text">RoadMap</h1>
+            <p class="subtitle">Создать интерактивную дорожную карту онлайн</p>
+        </header>
 
-    <div class="theme-switch-wrapper">
-        <em class="theme-text-dark">Светлая</em>
-        <label class="theme-switch" for="checkbox">
-            <input type="checkbox" id="checkbox" />
-            <div class="slider round"></div>
-        </label>
-        <em class="theme-text-light">Тёмная</em>
+        <div class="theme-switch-wrapper">
+            <em class="theme-text-dark">Светлая</em>
+            <label class="theme-switch" for="checkbox">
+                <input type="checkbox" id="checkbox"/>
+                <div class="slider round"></div>
+            </label>
+            <em class="theme-text-light">Тёмная</em>
+        </div>
+
+        <main class="actions">
+            <div class="card">
+                <div class="icon">➕</div>
+                <h2>Новый холст</h2>
+                <p>Начните изучать что-то новое</p>
+                <input type="text" id="newTitle" placeholder="Название (напр. План Python)">
+                <button onclick="createRoadmap()" id="btnCreate">Создать холст</button>
+            </div>
+
+            <div class="card">
+                <div class="icon">🔑</div>
+                <h2>Войти по ключу</h2>
+                <p>Введите ключ для доступа к холсту</p>
+                <input type="text" id="urlKey" maxlength="8" placeholder="Напр. 7059e041">
+                <button onclick="openRoadmap()" id="btnOpen">Открыть проект</button>
+            </div>
+        </main>
     </div>
-
-    <main class="actions">
-        <div class="card">
-            <div class="icon">➕</div>
-            <h2>Новый холст</h2>
-            <p>Начните изучать что-то новое</p>
-            <input type="text" id="newTitle" placeholder="Название (напр. План Python)">
-            <button onclick="createRoadmap()" id="btnCreate">Создать холст</button>
-        </div>
-
-        <div class="card">
-            <div class="icon">🔑</div>
-            <h2>Войти по ключу</h2>
-            <p>Введите ключ для доступа к холсту</p>
-            <input type="text" id="urlKey" maxlength="8" placeholder="Напр. 7059e041">
-            <button onclick="openRoadmap()" id="btnOpen">Открыть проект</button>
-        </div>
-    </main>
 </div>
+<aside class="side-panel">
+    <div class="side-panel-header">
+        <h3>Все холсты</h3>
+    </div>
+    <div id="roadmap-list" class="roadmap-list">
+        <div class="loading">Загрузка списка...</div>
+    </div>
+</aside>
+
 <script src="app.js"></script>
 </body>
 </html>

@@ -122,10 +122,16 @@ public class RoadmapController : ControllerBase
             .Include(r => r.Nodes)
             .FirstOrDefaultAsync(r => r.UrlKey == key);
 
-        if (roadmap == null) return NotFound(); 
+        if (roadmap == null) return NotFound();
         _context.Roadmaps.Remove(roadmap);
         await _context.SaveChangesAsync();
 
         return Ok();
+    }
+
+    [HttpGet]
+    public async Task<ActionResult<IEnumerable<Roadmap>>> GetAll()
+    {
+        return await _context.Roadmaps.ToListAsync();
     }
 }

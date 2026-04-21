@@ -44,3 +44,44 @@ function openRoadmap() {
     if (key.length !== 8) return alert("Ключ должен быть 8 символов!");
     window.location.href = `../roadmap_page/roadmap.html?key=${key}`;
 }
+
+const API_BASE = 'http://localhost:5000/api/Roadmap';
+
+async function loadRoadmapsList() {
+    const listContainer = document.getElementById('roadmap-list');
+
+    try {
+        const response = await fetch(API_BASE);
+        if (!response.ok) throw new Error('Ошибка сети');
+        const roadmaps = await response.json();
+
+        if (roadmaps.length === 0) {
+            listContainer.innerHTML = '<div class="empty">Пока нет ни одного холста</div>';
+            return;
+        }
+
+        listContainer.innerHTML = roadmaps.map(rm => `
+        <div class="roadmap-item">
+            <a href="../roadmap_page/roadmap.html?key=${rm.urlKey}" class="roadmap-name">
+                ${rm.title || 'Без названия'}
+            </a>
+            <div class="roadmap-item-footer">
+                <span class="roadmap-key">${rm.urlKey}</span>
+                <button class="btn-copy-small" onclick="copyToClipboard('${rm.urlKey}')" title="Копировать ключ">📋</button>
+            </div>
+        </div>
+    `).join('');
+
+    } catch (err) {
+        console.error(err);
+        listContainer.innerHTML = '<div class="error">Не удалось загрузить список</div>';
+    }
+}
+
+function copyToClipboard(text) {
+    navigator.clipboard.writeText(text).then(() => {
+        alert('Ключ скопирован: ' + text);
+    });
+}
+
+document.addEventListener('DOMContentLoaded', loadRoadmapsList);
