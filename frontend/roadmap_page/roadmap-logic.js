@@ -360,6 +360,11 @@ container.onmousedown = (e) => {
     if (e.altKey) return;
 
     if (e.target === container || e.target === nodesLayer || e.target === svgLayer) {
+        if (connectionSource) {
+            connectionSource = null;
+            renderNodes(roadmapData.nodes);
+        }
+
         e.preventDefault();
         isPanning = true;
         startPanX = e.clientX - pointX;
