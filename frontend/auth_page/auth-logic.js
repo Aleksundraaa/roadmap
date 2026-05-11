@@ -1,6 +1,19 @@
 let isLoginMode = true;
 const API_AUTH = "http://localhost:5000/api/auth";
 
+const toggleSwitch = document.querySelector('#checkbox');
+const currentTheme = localStorage.getItem('theme') || 'light';
+
+document.documentElement.setAttribute('data-theme', currentTheme);
+if (toggleSwitch) {
+    toggleSwitch.checked = currentTheme === 'dark';
+    toggleSwitch.addEventListener('change', (e) => {
+        const theme = e.target.checked ? 'dark' : 'light';
+        document.documentElement.setAttribute('data-theme', theme);
+        localStorage.setItem('theme', theme);
+    });
+}
+
 function toggleAuthMode() {
     isLoginMode = !isLoginMode;
 
