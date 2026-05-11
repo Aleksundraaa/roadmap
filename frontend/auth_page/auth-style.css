@@ -251,3 +251,32 @@ input:checked + .slider {
 input:checked + .slider:before {
     transform: translateX(20px);
 }
+
+.password-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    width: 100%;
+    gap: 8px;
+}
+
+.password-toggle {
+    font-size: 0.85rem;
+    color: var(--primary);
+    cursor: pointer;
+    user-select: none;
+    font-weight: 500;
+    transition: opacity 0.2s;
+    margin-top: 2px;
+    margin-left: 4px;
+}
+
+.password-toggle:hover {
+    text-decoration: underline;
+    opacity: 0.8;
+}
+
+.password-wrapper .auth-input {
+    width: 100%;
+    margin-bottom: 0 !important;
+}

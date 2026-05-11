@@ -26,11 +26,16 @@
         <h2 id="auth-title">Вход</h2>
         <p class="subtitle" style="margin-bottom: 20px;">Добро пожаловать</p>
 
+
         <div class="auth-form">
             <input type="text" id="username" placeholder="Логин" class="auth-input">
-            <input type="password" id="password" placeholder="Пароль" class="auth-input">
-            <button id="btnAuth" class="btn-primary" onclick="handleAuth()">Войти</button>
 
+            <div class="password-wrapper">
+                <input type="password" id="password" placeholder="Пароль" class="auth-input">
+                <span id="togglePassword" class="password-toggle">Показать пароль</span>
+            </div>
+
+            <button id="btnAuth" class="btn-primary" onclick="handleAuth()">Войти</button>
             <p class="auth-toggle" onclick="toggleAuthMode()" id="toggle-text">
                 Нет аккаунта? Зарегистрироваться
             </p>
@@ -41,7 +46,6 @@
 <script src="auth-logic.js"></script>
 
 <script>
-    // 1. Инициализация темы при загрузке
     const toggleSwitch = document.querySelector('#checkbox');
     const currentTheme = localStorage.getItem('theme') || 'light';
 
