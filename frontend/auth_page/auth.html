@@ -23,6 +23,7 @@
         <header>
             <h1 class="gradient-text">RoadMap</h1>
         </header>
+        <h2 id="auth-title">Вход</h2>
         <p class="subtitle" style="margin-bottom: 20px;">Добро пожаловать</p>
 
         <div class="auth-form">
@@ -36,10 +37,24 @@
         </div>
     </div>
 </div>
+
 <script src="auth-logic.js"></script>
+
 <script>
+    // 1. Инициализация темы при загрузке
+    const toggleSwitch = document.querySelector('#checkbox');
     const currentTheme = localStorage.getItem('theme') || 'light';
+
     document.documentElement.setAttribute('data-theme', currentTheme);
+
+    if (toggleSwitch) {
+        toggleSwitch.checked = currentTheme === 'dark';
+        toggleSwitch.addEventListener('change', (e) => {
+            const theme = e.target.checked ? 'dark' : 'light';
+            document.documentElement.setAttribute('data-theme', theme);
+            localStorage.setItem('theme', theme);
+        });
+    }
 </script>
 </body>
 </html>
