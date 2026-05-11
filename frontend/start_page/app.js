@@ -17,6 +17,13 @@ async function createRoadmap() {
     const title = document.getElementById('newTitle').value.trim();
     if (!title) return alert("Введите название плана!");
 
+    const token = localStorage.getItem('token');
+    if (!token) {
+        alert("Сессия истекла. Пожалуйста, войдите снова.");
+        window.location.href = "../auth_page/auth.html";
+        return;
+    }
+
     const btn = document.getElementById('btnCreate');
     btn.disabled = true;
     btn.innerText = "Создание...";
@@ -24,16 +31,22 @@ async function createRoadmap() {
     try {
         const response = await fetch(API_URL, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
             body: JSON.stringify({ title: title })
         });
 
-        if (!response.ok) throw new Error();
-        const data = await response.json();
+        if (!response.ok) {
+            if (response.status === 401) throw new Error("Не авторизован");
+            throw new Error("Ошибка при создании");
+        }
 
+        const data = await response.json();
         window.location.href = `../roadmap_page/roadmap.html?key=${data.urlKey}`;
     } catch (e) {
-        alert("Ошибка сервера. Проверь Rider!");
+        alert("Ошибка сервера: " + e.message);
         btn.disabled = false;
         btn.innerText = "Создать холст";
     }
@@ -49,9 +62,17 @@ const API_BASE = 'http://localhost:5000/api/Roadmap';
 
 async function loadRoadmapsList() {
     const listContainer = document.getElementById('roadmap-list');
-
+    const token = localStorage.getItem('token');
+    if (!token) {
+        window.location.href = "../auth_page/auth.html";
+        return;
+    }
     try {
-        const response = await fetch(API_BASE);
+        const response = await fetch(API_BASE, {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
         if (!response.ok) throw new Error('Ошибка сети');
         const roadmaps = await response.json();
 

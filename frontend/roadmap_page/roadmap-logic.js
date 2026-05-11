@@ -25,13 +25,34 @@ const svgLayer = document.getElementById('canvas-svg');
 async function loadRoadmap() {
     const params = new URLSearchParams(window.location.search);
     const key = params.get('key');
+
     if (!key) return window.location.href = '../start_page/index.html';
+
+    const token = localStorage.getItem('token');
+    if (!token) {
+        window.location.href = '../auth_page/auth.html';
+        return;
+    }
 
     document.getElementById('roadmapKey').innerText = key;
 
     try {
-        const response = await fetch(`${API_URL}/${key}`);
-        if (!response.ok) throw new Error();
+        const response = await fetch(`${API_URL}/${key}`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`, // Передаем наш JWT
+                'Content-Type': 'application/json'
+            }
+        });
+
+        if (!response.ok) {
+            if (response.status === 401) {
+                localStorage.removeItem('token');
+                window.location.href = '../auth_page/auth.html';
+            }
+            throw new Error("Не удалось загрузить холст");
+        }
+
         roadmapData = await response.json();
 
         document.getElementById('roadmapTitle').innerText = roadmapData.title;
@@ -44,6 +65,7 @@ async function loadRoadmap() {
         }
     } catch (e) {
         console.error("Ошибка загрузки:", e);
+        alert("Ошибка доступа или холст не найден.");
     }
 }
 
@@ -62,7 +84,10 @@ async function handleSave() {
     try {
         const res = await fetch(`${API_URL}/nodes/${currentNode.id}`, {
             method: 'PUT',
-            headers: {'Content-Type': 'application/json'},
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`, // Добавлено
+                'Content-Type': 'application/json'
+            },
             body: JSON.stringify(updatedData)
         });
 
@@ -70,13 +95,10 @@ async function handleSave() {
             closeDetails();
             await loadRoadmap();
         } else {
-            const errorData = await res.json();
-            console.error("Ошибка сервера:", errorData);
             alert("Не удалось сохранить изменения");
         }
     } catch (e) {
         console.error("Ошибка при сохранении:", e);
-        alert("Ошибка связи с сервером");
     }
 }
 
@@ -213,7 +235,10 @@ async function deleteEdge(childNode) {
     try {
         const res = await fetch(`${API_URL}/nodes/${childNode.id}`, {
             method: 'PUT',
-            headers: {'Content-Type': 'application/json'},
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`, // Добавлено
+                'Content-Type': 'application/json'
+            },
             body: JSON.stringify(updatedData)
         });
 
@@ -240,7 +265,10 @@ async function connectNodes(parentId, childNode) {
     try {
         const res = await fetch(`${API_URL}/nodes/${childNode.id}`, {
             method: 'PUT',
-            headers: {'Content-Type': 'application/json'},
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`, // Добавлено
+                'Content-Type': 'application/json'
+            },
             body: JSON.stringify(updatedData)
         });
         if (!res.ok) throw new Error("Ошибка сервера при создании связи");
@@ -267,7 +295,12 @@ document.getElementById('btnSaveNode').onclick = handleSave;
 
 document.getElementById('btnDeleteNode').onclick = async () => {
     if (!currentNode || !confirm(`Удалить тему "${currentNode.title}"?`)) return;
-    const res = await fetch(`${API_URL}/nodes/${currentNode.id}`, {method: 'DELETE'});
+    const res = await fetch(`${API_URL}/nodes/${currentNode.id}`, {
+        method: 'DELETE',
+        headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}` // Добавлено
+        }
+    });
     if (res.ok) {
         closeDetails();
         loadRoadmap();
@@ -324,7 +357,10 @@ window.onmouseup = async () => {
         };
         await fetch(`${API_URL}/nodes/${draggedNodeData.id}`, {
             method: 'PUT',
-            headers: {'Content-Type': 'application/json'},
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`, // Добавлено
+                'Content-Type': 'application/json'
+            },
             body: JSON.stringify(updated)
         });
     }
@@ -378,7 +414,10 @@ document.getElementById('btnCreateNode').onclick = async () => {
     const newNode = {title: "Новая тема", description: "", x: 3000, y: 3000};
     const res = await fetch(`${API_URL}/${key}/nodes`, {
         method: 'POST',
-        headers: {'Content-Type': 'application/json'},
+        headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`, // Добавлено
+            'Content-Type': 'application/json'
+        },
         body: JSON.stringify(newNode)
     });
     if (res.ok) loadRoadmap();
@@ -462,7 +501,10 @@ document.getElementById('btnDeleteRoadmap').onclick = async () => {
     if (confirmMessage) {
         try {
             const res = await fetch(`${API_URL}/${key}`, {
-                method: 'DELETE'
+                method: 'DELETE',
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('token')}` // Добавлено
+                }
             });
 
             if (res.ok) {
