@@ -105,4 +105,10 @@ function copyToClipboard(text) {
     });
 }
 
+function handleLogout() {
+    if (confirm("Вы уверены, что хотите выйти?")) {
+        localStorage.removeItem('token');
+        window.location.href = "../auth_page/auth.html";
+    }
+}
 document.addEventListener('DOMContentLoaded', loadRoadmapsList);

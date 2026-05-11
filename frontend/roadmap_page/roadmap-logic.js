@@ -40,7 +40,7 @@ async function loadRoadmap() {
         const response = await fetch(`${API_URL}/${key}`, {
             method: 'GET',
             headers: {
-                'Authorization': `Bearer ${token}`, // Передаем наш JWT
+                'Authorization': `Bearer ${token}`,
                 'Content-Type': 'application/json'
             }
         });
@@ -85,7 +85,7 @@ async function handleSave() {
         const res = await fetch(`${API_URL}/nodes/${currentNode.id}`, {
             method: 'PUT',
             headers: {
-                'Authorization': `Bearer ${localStorage.getItem('token')}`, // Добавлено
+                'Authorization': `Bearer ${localStorage.getItem('token')}`,
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify(updatedData)
@@ -236,7 +236,7 @@ async function deleteEdge(childNode) {
         const res = await fetch(`${API_URL}/nodes/${childNode.id}`, {
             method: 'PUT',
             headers: {
-                'Authorization': `Bearer ${localStorage.getItem('token')}`, // Добавлено
+                'Authorization': `Bearer ${localStorage.getItem('token')}`,
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify(updatedData)
@@ -266,7 +266,7 @@ async function connectNodes(parentId, childNode) {
         const res = await fetch(`${API_URL}/nodes/${childNode.id}`, {
             method: 'PUT',
             headers: {
-                'Authorization': `Bearer ${localStorage.getItem('token')}`, // Добавлено
+                'Authorization': `Bearer ${localStorage.getItem('token')}`,
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify(updatedData)
@@ -298,7 +298,7 @@ document.getElementById('btnDeleteNode').onclick = async () => {
     const res = await fetch(`${API_URL}/nodes/${currentNode.id}`, {
         method: 'DELETE',
         headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}` // Добавлено
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
     });
     if (res.ok) {
@@ -358,7 +358,7 @@ window.onmouseup = async () => {
         await fetch(`${API_URL}/nodes/${draggedNodeData.id}`, {
             method: 'PUT',
             headers: {
-                'Authorization': `Bearer ${localStorage.getItem('token')}`, // Добавлено
+                'Authorization': `Bearer ${localStorage.getItem('token')}`,
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify(updated)
@@ -415,7 +415,7 @@ document.getElementById('btnCreateNode').onclick = async () => {
     const res = await fetch(`${API_URL}/${key}/nodes`, {
         method: 'POST',
         headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`, // Добавлено
+            'Authorization': `Bearer ${localStorage.getItem('token')}`,
             'Content-Type': 'application/json'
         },
         body: JSON.stringify(newNode)
@@ -503,7 +503,7 @@ document.getElementById('btnDeleteRoadmap').onclick = async () => {
             const res = await fetch(`${API_URL}/${key}`, {
                 method: 'DELETE',
                 headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('token')}` // Добавлено
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
                 }
             });
 

@@ -112,10 +112,7 @@ body {
     text-decoration: underline;
 }
 
-/* Стили специально для страницы авторизации */
-
 .auth-page {
-    /* Перебиваем grid из основного body, чтобы форма была по центру */
     display: flex !important;
     justify-content: center;
     align-items: center;

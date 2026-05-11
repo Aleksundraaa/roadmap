@@ -27,6 +27,30 @@ public class AuthController : ControllerBase
         _configuration = configuration;
     }
 
+    private string GenerateJwtToken(User user)
+    {
+        var claims = new List<Claim>
+        {
+            new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+            new Claim(ClaimTypes.Name, user.Username)
+        };
+
+        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(
+            _configuration.GetSection("Jwt:Key").Value!));
+
+        var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+
+        var token = new JwtSecurityToken(
+            issuer: _configuration.GetSection("Jwt:Issuer").Value,
+            audience: _configuration.GetSection("Jwt:Audience").Value,
+            claims: claims,
+            expires: DateTime.Now.AddDays(7),
+            signingCredentials: creds
+        );
+
+        return new JwtSecurityTokenHandler().WriteToken(token);
+    }
+
     [HttpPost("register")]
     public async Task<ActionResult> Register([FromBody] UserRegisterDto request)
     {
@@ -44,7 +68,8 @@ public class AuthController : ControllerBase
         };
         _context.Users.Add(user);
         await _context.SaveChangesAsync();
-        return Ok();
+        var token = GenerateJwtToken(user);
+        return Ok(new { token = token });
     }
 
     [HttpPost("login")]
@@ -62,25 +87,7 @@ public class AuthController : ControllerBase
             return BadRequest("Неверное имя пользователя или пароль");
         }
 
-        var claims = new List<Claim>
-        {
-            new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-            new Claim(ClaimTypes.Name, user.Username)
-        };
-
-        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(
-            _configuration.GetSection("Jwt:Key").Value!));
-        var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
-
-        var token = new JwtSecurityToken(
-            issuer: _configuration.GetSection("Jwt:Issuer").Value,
-            audience: _configuration.GetSection("Jwt:Audience").Value,
-            claims: claims,
-            expires: DateTime.Now.AddDays(7),
-            signingCredentials: creds
-        );
-
-        var jwt = new JwtSecurityTokenHandler().WriteToken(token);
+        var jwt = GenerateJwtToken(user);
         return Ok(new { token = jwt });
     }
 }

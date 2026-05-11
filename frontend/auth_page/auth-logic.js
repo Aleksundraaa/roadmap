@@ -1,7 +1,6 @@
 let isLoginMode = true;
 const API_AUTH = "http://localhost:5000/api/auth";
 
-// Функция переключения между Входом и Регистрацией
 function toggleAuthMode() {
     isLoginMode = !isLoginMode;
 
@@ -23,7 +22,6 @@ function toggleAuthMode() {
     }
 }
 
-// Основная функция авторизации
 async function handleAuth() {
     const username = document.getElementById('username').value.trim();
     const password = document.getElementById('password').value.trim();
@@ -36,7 +34,6 @@ async function handleAuth() {
     const endpoint = isLoginMode ? "login" : "register";
     const btn = document.getElementById('btnAuth');
 
-    // Блокируем кнопку на время запроса
     btn.disabled = true;
     btn.innerText = isLoginMode ? "Входим..." : "Регистрируем...";
 
@@ -47,31 +44,35 @@ async function handleAuth() {
             body: JSON.stringify({ username, password })
         });
 
-        const data = await res.json();
+        const responseText = await res.text();
+        let data;
+
+        try {
+            data = JSON.parse(responseText);
+        } catch (e) {
+            data = { message: responseText };
+        }
 
         if (!res.ok) {
             throw new Error(data.message || "Ошибка запроса");
         }
 
-        if (isLoginMode) {
-            // Если вошли — сохраняем токен и идем на главную
+        if (data.token) {
             localStorage.setItem('token', data.token);
             window.location.href = "../start_page/index.html";
         } else {
-            // Если зарегистрировались — перекидываем на форму входа
-            alert("Регистрация успешна! Теперь войдите в аккаунт.");
-            toggleAuthMode();
+            alert("Регистрация успешна! Войдите в аккаунт.");
+            if (!isLoginMode) toggleAuthMode();
         }
 
     } catch (err) {
-        alert("Ошибка: " + err.message);
+        alert(err.message);
     } finally {
         btn.disabled = false;
         btn.innerText = isLoginMode ? "Войти" : "Создать аккаунт";
     }
 }
 
-// Позволяем отправлять форму по нажатию Enter
 document.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') {
         handleAuth();
