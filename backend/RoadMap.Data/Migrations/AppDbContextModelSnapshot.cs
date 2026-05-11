@@ -66,9 +66,33 @@ namespace RoadMap.Data.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
+                    b.Property<int?>("UserId")
+                        .HasColumnType("INTEGER");
+
                     b.HasKey("Id");
 
+                    b.HasIndex("UserId");
+
                     b.ToTable("Roadmaps");
+                });
+
+            modelBuilder.Entity("RoadMap.Data.Entities.User", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Password")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Username")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Users");
                 });
 
             modelBuilder.Entity("RoadMap.Data.Entities.Node", b =>
@@ -84,7 +108,21 @@ namespace RoadMap.Data.Migrations
 
             modelBuilder.Entity("RoadMap.Data.Entities.Roadmap", b =>
                 {
+                    b.HasOne("RoadMap.Data.Entities.User", "User")
+                        .WithMany("Roadmaps")
+                        .HasForeignKey("UserId");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("RoadMap.Data.Entities.Roadmap", b =>
+                {
                     b.Navigation("Nodes");
+                });
+
+            modelBuilder.Entity("RoadMap.Data.Entities.User", b =>
+                {
+                    b.Navigation("Roadmaps");
                 });
 #pragma warning restore 612, 618
         }
