@@ -1,7 +1,5 @@
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using RoadMap.Data;
-using RoadMap.Data.Entities;
+using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using RoadMap.Data;
@@ -9,6 +7,7 @@ using RoadMap.Data.Entities;
 
 namespace RoadMap.Api.Controllers;
 
+[Authorize]
 [ApiController]
 [Route("api/[controller]")]
 public class RoadmapController : ControllerBase
@@ -20,12 +19,15 @@ public class RoadmapController : ControllerBase
         _context = context;
     }
 
+    private int GetUserId() => int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+
     [HttpGet("{urlKey}")]
     public async Task<ActionResult<Roadmap>> GetByKey(string urlKey)
     {
+        var userId = GetUserId();
         var roadmap = await _context.Roadmaps
             .Include(r => r.Nodes)
-            .FirstOrDefaultAsync(r => r.UrlKey == urlKey);
+            .FirstOrDefaultAsync(r => r.UrlKey == urlKey && r.UserId == userId);
 
         if (roadmap == null) return NotFound();
 
@@ -46,6 +48,7 @@ public class RoadmapController : ControllerBase
         {
             Title = request.Title,
             UrlKey = Guid.NewGuid().ToString().Substring(0, 8),
+            UserId = GetUserId(),
             Nodes = new List<Node>()
         };
 
@@ -60,8 +63,10 @@ public class RoadmapController : ControllerBase
     [HttpPost("{urlKey}/nodes")]
     public async Task<IActionResult> AddNode(string urlKey, [FromBody] AddNodeRequest request)
     {
-        var roadmap = await _context.Roadmaps.FirstOrDefaultAsync(r => r.UrlKey == urlKey);
-        if (roadmap == null) return NotFound("Карта не найдена");
+        var userId = GetUserId();
+        var roadmap = await _context.Roadmaps.FirstOrDefaultAsync(r => r.UrlKey == urlKey
+                                                                       && r.UserId == userId);
+        if (roadmap == null) return NotFound("Дорожная карта не найдена или не вы ее владелец");
 
         var node = new Node
         {
@@ -89,8 +94,13 @@ public class RoadmapController : ControllerBase
     [HttpPut("nodes/{id}")]
     public async Task<IActionResult> UpdateNode(int id, [FromBody] UpdateNodeRequest request)
     {
-        var node = await _context.Nodes.FindAsync(id);
-        if (node == null) return NotFound();
+        var userId = GetUserId();
+        var node = await _context.Nodes
+            .Include(n => n.Roadmap)
+            .FirstOrDefaultAsync(n => n.Id == id);
+
+        if (node == null || node.Roadmap.UserId != userId)
+            return NotFound("Дорожная карта не найдена или не вы ее владелец");
 
         node.Title = request.Title;
         node.Description = request.Description;
@@ -106,8 +116,13 @@ public class RoadmapController : ControllerBase
     [HttpDelete("nodes/{id}")]
     public async Task<IActionResult> DeleteNode(int id)
     {
-        var node = await _context.Nodes.FindAsync(id);
-        if (node == null) return NotFound();
+        var userId = GetUserId();
+        var node = await _context.Nodes
+            .Include(n => n.Roadmap)
+            .FirstOrDefaultAsync(n => n.Id == id);
+
+        if (node == null || node.Roadmap.UserId != userId)
+            return NotFound("Дорожная карта не найдена или не вы ее владелец");
 
         _context.Nodes.Remove(node);
         await _context.SaveChangesAsync();
@@ -118,11 +133,12 @@ public class RoadmapController : ControllerBase
     [HttpDelete("{key}")]
     public async Task<IActionResult> DeleteRoadmap(string key)
     {
+        var userId = GetUserId();
         var roadmap = await _context.Roadmaps
             .Include(r => r.Nodes)
-            .FirstOrDefaultAsync(r => r.UrlKey == key);
+            .FirstOrDefaultAsync(r => r.UrlKey == key && r.UserId == userId);
 
-        if (roadmap == null) return NotFound();
+        if (roadmap == null) return NotFound("Дорожная карта не найдена или не вы ее владелец");
         _context.Roadmaps.Remove(roadmap);
         await _context.SaveChangesAsync();
 
@@ -130,8 +146,11 @@ public class RoadmapController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<Roadmap>>> GetAll()
+    public async Task<ActionResult<IEnumerable<Roadmap>>> GetMyRoadmaps()
     {
-        return await _context.Roadmaps.ToListAsync();
+        var userId = GetUserId();
+        return await _context.Roadmaps
+            .Where(r => r.UserId == userId)
+            .ToListAsync();
     }
 }
