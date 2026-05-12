@@ -284,6 +284,88 @@ function showNodeDetails(node) {
     document.getElementById('node-edit-desc').value = node.description || "";
     document.getElementById('node-edit-status').value = node.status || "todo";
     document.getElementById('node-modal').classList.add('active');
+
+    const display = document.getElementById('conspect-display');
+    if (node.conspectPath) {
+        const fileUrl = `http://localhost:5000/uploads/${node.conspectPath}`;
+        display.innerHTML = `<a href="${fileUrl}" target="_blank" class="file-link">Открыть текущий конспект</a>`;
+    } else {
+        display.innerHTML = `<p style="color: #888;">Конспект не прикреплен</p>`;
+    }
+}
+
+let selectedFile = null;
+
+function handleFileSelect(event) {
+    selectedFile = event.target.files[0];
+    if (selectedFile) {
+        document.getElementById('uploadBtn').style.display = 'inline-block';
+        document.getElementById('conspect-display').innerHTML = `Выбран файл: <strong>${selectedFile.name}</strong>`;
+    }
+}
+
+async function handleFileSelect(event) {
+    const file = event.target.files[0];
+    if (!file || !currentNode) return;
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const display = document.getElementById('conspect-display');
+    display.innerHTML = `<p style="color: var(--primary);">⏳ Загрузка...</p>`;
+
+    try {
+        const response = await fetch(`${API_URL}/nodes/${currentNode.id}/upload-conspect`, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            alert("Файл успешно прикреплен!");
+            currentNode.conspectPath = data.fileName;
+            showNodeDetails(currentNode);
+            await loadRoadmap();
+        } else {
+            const error = await response.text();
+            alert("Ошибка при загрузке: " + error);
+        }
+    } catch (err) {
+        console.error("Ошибка сети:", err);
+    }
+}
+
+async function uploadConspect() {
+    if (!selectedFile || !selectedNodeId) return;
+
+    const formData = new FormData();
+    formData.append('file', selectedFile);
+
+    try {
+        const response = await fetch(`${API_URL}/roadmap/nodes/${selectedNodeId}/upload-conspect`, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            alert("Файл успешно сохранен!");
+
+            document.getElementById('uploadBtn').style.display = 'none';
+            loadRoadmap();
+        } else {
+            const error = await response.text();
+            alert("Ошибка: " + error);
+        }
+    } catch (err) {
+        console.error("Критическая ошибка загрузки:", err);
+    }
 }
 
 function closeDetails() {

@@ -59,6 +59,18 @@
                     <option value="done">Завершено</option>
                 </select>
             </div>
+            <div class="node-details">
+                <div class="conspect-section" style="margin-top: 20px; border-top: 1px solid var(--border); padding-top: 15px;">
+                    <h4 style="margin-bottom: 10px;">Конспект</h4>
+
+                    <div id="conspect-display" style="margin-bottom: 10px;"></div>
+
+                    <label for="conspectInput" class="btn-cancel" style="cursor: pointer; display: inline-block; text-align: center; width: 100%;">
+                        Добавить конспект
+                    </label>
+                    <input type="file" id="conspectInput" style="display:none" onchange="handleFileSelect(event)">
+                </div>
+            </div>
             <div class="modal-actions">
                 <button id="btnSaveNode" class="btn-save">Сохранить</button>
                 <button class="btn-cancel" onclick="closeDetails()">Отмена</button>
