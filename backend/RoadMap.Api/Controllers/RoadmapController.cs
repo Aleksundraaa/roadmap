@@ -157,4 +157,40 @@ public class RoadmapController : ControllerBase
             .Where(r => r.UserId == userId)
             .ToListAsync();
     }
+
+
+    [HttpPost("nodes/{id}/upload-conspect")]
+    public async Task<ActionResult> UploadConspect(int id, IFormFile file)
+    {
+        var userId = GetUserId();
+        var node = await _context.Nodes
+            .Include(n => n.Roadmap)
+            .FirstOrDefaultAsync(n => n.Id == id);
+
+        if (node == null || node.Roadmap.UserId != userId)
+        {
+            return NotFound("Нет узла или у вас нет прав");
+        }
+
+        if (file == null || file.Length == 0)
+        {
+            return BadRequest("Файл не выбран");
+        }
+        
+        var fileName = $"{Guid.NewGuid()}{Path.GetExtension(file.FileName)}";
+        var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads");
+
+        if (!Directory.Exists(uploadsFolder)) 
+            Directory.CreateDirectory(uploadsFolder);
+
+        var filePath = Path.Combine(uploadsFolder, fileName);
+        using (var stream = new FileStream(filePath, FileMode.Create))
+        {
+            await file.CopyToAsync(stream);
+        }
+        
+        node.ConspectPath = fileName;
+        await _context.SaveChangesAsync();
+        return Ok(node);
+    }
 }

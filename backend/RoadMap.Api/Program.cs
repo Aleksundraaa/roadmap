@@ -91,6 +91,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseRouting();
+app.UseStaticFiles();
 
 app.UseCors("AllowAll");
 

@@ -16,4 +16,5 @@ public class Node
     public Roadmap Roadmap { get; set; } = null!;
 
     public int? ParentNodeId { get; set; }
+    public string? ConspectPath { get; set; }
 }
