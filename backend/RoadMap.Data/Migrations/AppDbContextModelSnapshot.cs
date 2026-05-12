@@ -73,7 +73,7 @@ namespace RoadMap.Data.Migrations
 
                     b.HasIndex("NodeId");
 
-                    b.ToTable("NodeFile");
+                    b.ToTable("NodeFiles");
                 });
 
             modelBuilder.Entity("RoadMap.Data.Entities.Roadmap", b =>

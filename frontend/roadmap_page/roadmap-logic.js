@@ -125,8 +125,20 @@ function renderNodes(nodes) {
         }
         const currentStatus = node.status || 'todo';
 
+        const filesCount = node.files ? node.files.length : 0;
+        const filesBadge = filesCount > 0
+            ? `<div class="node-files-count ${statusInfo.class}" style="font-size: 0.65rem; font-weight: 700; margin-top: 4px;">
+                КОНСПЕКТЫ: ${filesCount}
+               </div>`
+            : '';
+
+        if (connectionSource && connectionSource.id === node.id) {
+            card.style.outline = "3px solid var(--primary)";
+        }
+
         card.innerHTML = `
         <div class="node-status ${statusInfo.class}">${statusInfo.text}</div>
+        ${filesBadge}
         <h3>${node.title}</h3>
         <p class="node-desc">${node.description || "Нет описания"}</p>
         <div class="node-line ${currentStatus}"></div>`;
@@ -286,11 +298,18 @@ function showNodeDetails(node) {
     document.getElementById('node-modal').classList.add('active');
 
     const display = document.getElementById('conspect-display');
-    if (node.conspectPath) {
-        const fileUrl = `http://localhost:5000/uploads/${node.conspectPath}`;
-        display.innerHTML = `<a href="${fileUrl}" target="_blank" class="file-link">Открыть текущий конспект</a>`;
+    display.innerHTML = '';
+
+    if (node.files && node.files.length > 0) {
+        node.files.forEach(file => {
+            const fileUrl = `http://localhost:5000/uploads/${file.storagePath}`;
+            display.innerHTML += `
+                <div class="file-item" style="margin-bottom: 5px;">
+                    <a href="${fileUrl}" target="_blank" class="file-link">${file.fileName}</a>
+                </div>`;
+        });
     } else {
-        display.innerHTML = `<p style="color: #888;">Конспект не прикреплен</p>`;
+        display.innerHTML = `<p style="color: #888;">Конспекты не прикреплены</p>`;
     }
 }
 
@@ -312,7 +331,7 @@ async function handleFileSelect(event) {
     formData.append('file', file);
 
     const display = document.getElementById('conspect-display');
-    display.innerHTML = `<p style="color: var(--primary);">⏳ Загрузка...</p>`;
+    display.innerHTML = `<p style="color: var(--primary);">Загрузка...</p>`;
 
     try {
         const response = await fetch(`${API_URL}/nodes/${currentNode.id}/upload-conspect`, {

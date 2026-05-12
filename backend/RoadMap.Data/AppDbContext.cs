@@ -12,6 +12,7 @@ public class AppDbContext : DbContext
     
     public DbSet<Roadmap> Roadmaps => Set<Roadmap>();
     public DbSet<Node> Nodes => Set<Node>();
+    public DbSet<NodeFile> NodeFiles => Set<NodeFile>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

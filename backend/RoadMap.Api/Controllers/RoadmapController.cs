@@ -31,6 +31,7 @@ public class RoadmapController : ControllerBase
         var userId = GetUserId();
         var roadmap = await _context.Roadmaps
             .Include(r => r.Nodes)
+            .ThenInclude(f => f.Files)
             .FirstOrDefaultAsync(r => r.UrlKey == urlKey && r.UserId == userId);
 
         if (roadmap == null) return NotFound();
@@ -165,6 +166,7 @@ public class RoadmapController : ControllerBase
         var userId = GetUserId();
         var node = await _context.Nodes
             .Include(n => n.Roadmap)
+            .Include(n => n.Files)
             .FirstOrDefaultAsync(n => n.Id == id);
 
         if (node == null || node.Roadmap.UserId != userId)
@@ -176,20 +178,28 @@ public class RoadmapController : ControllerBase
         {
             return BadRequest("Файл не выбран");
         }
-        
-        var fileName = $"{Guid.NewGuid()}{Path.GetExtension(file.FileName)}";
+
+        var storageName = $"{Guid.NewGuid()}{Path.GetExtension(file.FileName)}";
         var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads");
 
-        if (!Directory.Exists(uploadsFolder)) 
+        if (!Directory.Exists(uploadsFolder))
             Directory.CreateDirectory(uploadsFolder);
 
-        var filePath = Path.Combine(uploadsFolder, fileName);
+        var filePath = Path.Combine(uploadsFolder, storageName);
+
         using (var stream = new FileStream(filePath, FileMode.Create))
         {
             await file.CopyToAsync(stream);
         }
-        
+
+        var newNodeFile = new NodeFile
+        {
+            FileName = file.FileName,
+            StoragePath = storageName,
+            NodeId = id
+        };
+        _context.NodeFiles.Add(newNodeFile);
         await _context.SaveChangesAsync();
-        return Ok(node);
+        return Ok(newNodeFile);
     }
 }
