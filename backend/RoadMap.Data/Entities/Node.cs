@@ -10,11 +10,12 @@ public class Node
     public double X { get; set; }
     public double Y { get; set; }
     public int RoadmapId { get; set; }
-    public string Status { get; set; } = "todo"; // todo, doing, done
+    public string Status { get; set; } = "todo"; 
 
     [JsonIgnore] 
     public Roadmap Roadmap { get; set; } = null!;
 
     public int? ParentNodeId { get; set; }
-    public string? ConspectPath { get; set; }
+    
+    public List<NodeFile> Files { get; set; } = new();
 }

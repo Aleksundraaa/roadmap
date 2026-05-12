@@ -189,7 +189,6 @@ public class RoadmapController : ControllerBase
             await file.CopyToAsync(stream);
         }
         
-        node.ConspectPath = fileName;
         await _context.SaveChangesAsync();
         return Ok(node);
     }

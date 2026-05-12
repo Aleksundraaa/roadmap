@@ -22,9 +22,6 @@ namespace RoadMap.Data.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
-                    b.Property<string>("ConspectPath")
-                        .HasColumnType("TEXT");
-
                     b.Property<string>("Description")
                         .HasColumnType("TEXT");
 
@@ -53,6 +50,30 @@ namespace RoadMap.Data.Migrations
                     b.HasIndex("RoadmapId");
 
                     b.ToTable("Nodes");
+                });
+
+            modelBuilder.Entity("RoadMap.Data.Entities.NodeFile", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("FileName")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("NodeId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("StoragePath")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("NodeId");
+
+                    b.ToTable("NodeFile");
                 });
 
             modelBuilder.Entity("RoadMap.Data.Entities.Roadmap", b =>
@@ -109,6 +130,17 @@ namespace RoadMap.Data.Migrations
                     b.Navigation("Roadmap");
                 });
 
+            modelBuilder.Entity("RoadMap.Data.Entities.NodeFile", b =>
+                {
+                    b.HasOne("RoadMap.Data.Entities.Node", "Node")
+                        .WithMany("Files")
+                        .HasForeignKey("NodeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Node");
+                });
+
             modelBuilder.Entity("RoadMap.Data.Entities.Roadmap", b =>
                 {
                     b.HasOne("RoadMap.Data.Entities.User", "User")
@@ -116,6 +148,11 @@ namespace RoadMap.Data.Migrations
                         .HasForeignKey("UserId");
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("RoadMap.Data.Entities.Node", b =>
+                {
+                    b.Navigation("Files");
                 });
 
             modelBuilder.Entity("RoadMap.Data.Entities.Roadmap", b =>
