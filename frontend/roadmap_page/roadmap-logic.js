@@ -22,6 +22,19 @@ const content = document.getElementById('canvas-content');
 const nodesLayer = document.getElementById('nodes-layer');
 const svgLayer = document.getElementById('canvas-svg');
 
+const toggleSwitch = document.querySelector('#checkbox');
+const currentTheme = localStorage.getItem('theme') || 'light';
+
+document.documentElement.setAttribute('data-theme', currentTheme);
+if (toggleSwitch) {
+    toggleSwitch.checked = currentTheme === 'dark';
+    toggleSwitch.addEventListener('change', (e) => {
+        const theme = e.target.checked ? 'dark' : 'light';
+        document.documentElement.setAttribute('data-theme', theme);
+        localStorage.setItem('theme', theme);
+    });
+}
+
 async function loadRoadmap() {
     const params = new URLSearchParams(window.location.search);
     const key = params.get('key');
@@ -65,7 +78,6 @@ async function loadRoadmap() {
         }
     } catch (e) {
         console.error("Ошибка загрузки:", e);
-        alert("Ошибка доступа или холст не найден.");
     }
 }
 
@@ -344,7 +356,6 @@ async function handleFileSelect(event) {
 
         if (response.ok) {
             const data = await response.json();
-            alert("Файл успешно прикреплен!");
             currentNode.conspectPath = data.fileName;
             showNodeDetails(currentNode);
             await loadRoadmap();
@@ -374,8 +385,6 @@ async function uploadConspect() {
 
         if (response.ok) {
             const data = await response.json();
-            alert("Файл успешно сохранен!");
-
             document.getElementById('uploadBtn').style.display = 'none';
             loadRoadmap();
         } else {
@@ -609,7 +618,6 @@ document.getElementById('btnDeleteRoadmap').onclick = async () => {
             });
 
             if (res.ok) {
-                alert('Холст успешно удален.');
                 window.location.href = '../start_page/index.html';
             } else {
                 const errorData = await res.json();
@@ -617,7 +625,7 @@ document.getElementById('btnDeleteRoadmap').onclick = async () => {
             }
         } catch (err) {
             console.error(err);
-            alert('Произошла ошибка при обращении к серверу.');
+            alert('Oшибка при обращении к серверу.');
         }
     }
 };

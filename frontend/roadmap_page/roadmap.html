@@ -24,8 +24,15 @@
     </div>
     <div class="header-actions">
         <button id="btnCreateNode" class="btn-plus"><span>+</span> Добавить занятие</button>
-        <button id="btnDeleteRoadmap" class="btn-danger-outline" title="Удалить весь холст">🗑 Удалить холст</button>
-        <button class="btn-theme" onclick="switchThemeToggle()">🌓</button>
+        <button id="btnDeleteRoadmap" class="btn-danger-outline" title="Удалить весь холст">Удалить холст</button>
+    </div>
+    <div class="theme-switch-wrapper">
+        <em class="theme-text-dark">Светлая</em>
+        <label class="theme-switch" for="checkbox">
+            <input type="checkbox" id="checkbox"/>
+            <div class="slider round"></div>
+        </label>
+        <em class="theme-text-light">Тёмная</em>
     </div>
 </header>
 
@@ -61,7 +68,7 @@
             </div>
             <div class="node-details">
                 <div class="conspect-section" style="margin-top: 20px; border-top: 1px solid var(--border); padding-top: 15px;">
-                    <h4 style="margin-bottom: 10px;">Конспект</h4>
+                    <h4 style="margin-bottom: 10px;">Конспекты</h4>
 
                     <div id="conspect-display" style="margin-bottom: 10px;"></div>
 
