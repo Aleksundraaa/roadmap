@@ -8,6 +8,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using RoadMap.Data;
 using RoadMap.Data.Entities;
+using RoadMap.Data.IServices;
+using RoadMap.Data.Services;
 
 namespace RoadMap.Api.Controllers;
 
@@ -16,11 +18,11 @@ namespace RoadMap.Api.Controllers;
 [Route("api/[controller]")]
 public class RoadmapController : ControllerBase
 {
-    private readonly AppDbContext _context;
+    private IRoadmapService _roadmapService;
 
-    public RoadmapController(AppDbContext context)
+    public RoadmapController(IRoadmapService roadmapService)
     {
-        _context = context;
+        _roadmapService = roadmapService;
     }
 
     private int GetUserId() => int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
@@ -29,13 +31,7 @@ public class RoadmapController : ControllerBase
     public async Task<ActionResult<Roadmap>> GetByKey(string urlKey)
     {
         var userId = GetUserId();
-        var roadmap = await _context.Roadmaps
-            .Include(r => r.Nodes)
-            .ThenInclude(f => f.Files)
-            .FirstOrDefaultAsync(r => r.UrlKey == urlKey && r.UserId == userId);
-
-        if (roadmap == null) return NotFound();
-
+        var roadmap = await _roadmapService.GetRoadmapWithFiles(urlKey, userId);
         return Ok(roadmap);
     }
 
@@ -57,9 +53,7 @@ public class RoadmapController : ControllerBase
             Nodes = new List<Node>()
         };
 
-        _context.Roadmaps.Add(roadmap);
-        await _context.SaveChangesAsync();
-
+        await _roadmapService.AddRoadmap(roadmap);
         return Ok(roadmap);
     }
 
@@ -69,9 +63,7 @@ public class RoadmapController : ControllerBase
     public async Task<IActionResult> AddNode(string urlKey, [FromBody] AddNodeRequest request)
     {
         var userId = GetUserId();
-        var roadmap = await _context.Roadmaps.FirstOrDefaultAsync(r => r.UrlKey == urlKey
-                                                                       && r.UserId == userId);
-        if (roadmap == null) return NotFound("Дорожная карта не найдена или не вы ее владелец");
+        var roadmap = await _roadmapService.GetRoadmapByKey(urlKey, userId);
 
         var node = new Node
         {
@@ -82,39 +74,16 @@ public class RoadmapController : ControllerBase
             RoadmapId = roadmap.Id
         };
 
-        _context.Nodes.Add(node);
-        await _context.SaveChangesAsync();
-
+        await _roadmapService.AddNode(node);
         return Ok(node);
     }
 
-    public record UpdateNodeRequest(
-        string Title,
-        string? Description,
-        double X,
-        double Y,
-        int? ParentNodeId,
-        string Status);
-
     [HttpPut("nodes/{id}")]
-    public async Task<IActionResult> UpdateNode(int id, [FromBody] UpdateNodeRequest request)
+    public async Task<IActionResult> UpdateNode(int id, [FromBody] RoadmapService.UpdateNodeRequest request)
     {
         var userId = GetUserId();
-        var node = await _context.Nodes
-            .Include(n => n.Roadmap)
-            .FirstOrDefaultAsync(n => n.Id == id);
-
-        if (node == null || node.Roadmap.UserId != userId)
-            return NotFound("Дорожная карта не найдена или не вы ее владелец");
-
-        node.Title = request.Title;
-        node.Description = request.Description;
-        node.X = request.X;
-        node.Y = request.Y;
-        node.ParentNodeId = request.ParentNodeId;
-        node.Status = request.Status;
-
-        await _context.SaveChangesAsync();
+        var node = await _roadmapService.GetNodeById(id, userId);
+        await _roadmapService.UpdateNodeInfo(node, request);
         return Ok(node);
     }
 
@@ -122,31 +91,17 @@ public class RoadmapController : ControllerBase
     public async Task<IActionResult> DeleteNode(int id)
     {
         var userId = GetUserId();
-        var node = await _context.Nodes
-            .Include(n => n.Roadmap)
-            .FirstOrDefaultAsync(n => n.Id == id);
-
-        if (node == null || node.Roadmap.UserId != userId)
-            return NotFound("Дорожная карта не найдена или не вы ее владелец");
-
-        _context.Nodes.Remove(node);
-        await _context.SaveChangesAsync();
-
-        return NoContent();
+        var node = await _roadmapService.GetNodeById(id, userId);
+        await _roadmapService.RemoveNode(node);
+        return Ok();
     }
 
     [HttpDelete("{key}")]
     public async Task<IActionResult> DeleteRoadmap(string key)
     {
         var userId = GetUserId();
-        var roadmap = await _context.Roadmaps
-            .Include(r => r.Nodes)
-            .FirstOrDefaultAsync(r => r.UrlKey == key && r.UserId == userId);
-
-        if (roadmap == null) return NotFound("Дорожная карта не найдена или не вы ее владелец");
-        _context.Roadmaps.Remove(roadmap);
-        await _context.SaveChangesAsync();
-
+        var roadmap = await _roadmapService.GetRoadmapWithNodes(key, userId);
+        await _roadmapService.DeleteRoadmap(roadmap);
         return Ok();
     }
 
@@ -154,9 +109,8 @@ public class RoadmapController : ControllerBase
     public async Task<ActionResult<IEnumerable<Roadmap>>> GetMyRoadmaps()
     {
         var userId = GetUserId();
-        return await _context.Roadmaps
-            .Where(r => r.UserId == userId)
-            .ToListAsync();
+        var roadmaps = await _roadmapService.GetAllRoadmaps(userId);
+        return Ok(roadmaps);
     }
 
 
@@ -164,42 +118,7 @@ public class RoadmapController : ControllerBase
     public async Task<ActionResult> UploadConspect(int id, IFormFile file)
     {
         var userId = GetUserId();
-        var node = await _context.Nodes
-            .Include(n => n.Roadmap)
-            .Include(n => n.Files)
-            .FirstOrDefaultAsync(n => n.Id == id);
-
-        if (node == null || node.Roadmap.UserId != userId)
-        {
-            return NotFound("Нет узла или у вас нет прав");
-        }
-
-        if (file == null || file.Length == 0)
-        {
-            return BadRequest("Файл не выбран");
-        }
-
-        var storageName = $"{Guid.NewGuid()}{Path.GetExtension(file.FileName)}";
-        var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads");
-
-        if (!Directory.Exists(uploadsFolder))
-            Directory.CreateDirectory(uploadsFolder);
-
-        var filePath = Path.Combine(uploadsFolder, storageName);
-
-        using (var stream = new FileStream(filePath, FileMode.Create))
-        {
-            await file.CopyToAsync(stream);
-        }
-
-        var newNodeFile = new NodeFile
-        {
-            FileName = file.FileName,
-            StoragePath = storageName,
-            NodeId = id
-        };
-        _context.NodeFiles.Add(newNodeFile);
-        await _context.SaveChangesAsync();
+        var newNodeFile = await _roadmapService.UploadNodeFileAsync(id, userId, file);
         return Ok(newNodeFile);
     }
 }

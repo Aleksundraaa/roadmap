@@ -10,6 +10,8 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using RoadMap.Data;
+using RoadMap.Data.IServices;
+using RoadMap.Data.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -31,6 +33,8 @@ builder.Services.AddControllers()
     });
 
 builder.Services.AddEndpointsApiExplorer();
+
+builder.Services.AddScoped<IRoadmapService, RoadmapService>();
 
 builder.Services.AddSwaggerGen(options =>
 {
