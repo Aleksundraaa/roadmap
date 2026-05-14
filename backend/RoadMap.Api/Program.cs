@@ -39,6 +39,9 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddScoped<IRoadmapRepository, RoadmapRepository>();
 builder.Services.AddScoped<IRoadmapService, RoadmapService>();
 
+builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<IAuthService, AuthService>();
+
 builder.Services.AddSwaggerGen(options =>
 {
     options.SwaggerDoc("v1", new OpenApiInfo 

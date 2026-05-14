@@ -1,16 +1,7 @@
-using System;
-using System.Collections.Generic;
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-using System.Text;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
-using Microsoft.IdentityModel.Tokens;
 using RoadMap.Api.DTOs;
-using RoadMap.Data;
-using RoadMap.Data.Entities;
+using RoadMap.Data.IRepositories;
+using RoadMap.Data.IServices;
 
 namespace RoadMap.Api.Controllers;
 
@@ -18,76 +9,38 @@ namespace RoadMap.Api.Controllers;
 [Route("api/[controller]")]
 public class AuthController : ControllerBase
 {
-    private readonly AppDbContext _context;
+    private readonly IUserRepository _userRepository;
     private readonly IConfiguration _configuration;
+    private readonly IAuthService _authService;
 
-    public AuthController(AppDbContext context, IConfiguration configuration)
+    public AuthController(IConfiguration configuration, IAuthService authService)
     {
-        _context = context;
         _configuration = configuration;
-    }
-
-    private string GenerateJwtToken(User user)
-    {
-        var claims = new List<Claim>
-        {
-            new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-            new Claim(ClaimTypes.Name, user.Username)
-        };
-
-        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(
-            _configuration.GetSection("Jwt:Key").Value!));
-
-        var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
-
-        var token = new JwtSecurityToken(
-            issuer: _configuration.GetSection("Jwt:Issuer").Value,
-            audience: _configuration.GetSection("Jwt:Audience").Value,
-            claims: claims,
-            expires: DateTime.Now.AddDays(7),
-            signingCredentials: creds
-        );
-
-        return new JwtSecurityTokenHandler().WriteToken(token);
+        _authService = authService;
     }
 
     [HttpPost("register")]
     public async Task<ActionResult> Register([FromBody] UserRegisterDto request)
     {
-        if (await _context.Users.AnyAsync(x => x.Username == request.Username))
+        try 
         {
-            return BadRequest("Пользователь с таким именем уже существует");
+            var token = await _authService.RegisterAsync(request.Username, request.Password);
+            return Ok(new { token });
         }
-
-        var hashedPassword = BCrypt.Net.BCrypt.HashPassword(request.Password);
-
-        var user = new User
+        catch (Exception ex)
         {
-            Username = request.Username,
-            Password = hashedPassword,
-        };
-        _context.Users.Add(user);
-        await _context.SaveChangesAsync();
-        var token = GenerateJwtToken(user);
-        return Ok(new { token = token });
+            return BadRequest(ex.Message);
+        }
     }
 
     [HttpPost("login")]
     public async Task<ActionResult> Login([FromBody] UserLoginDto request)
     {
-        var user = await _context.Users.FirstOrDefaultAsync(x => x.Username == request.Username);
-
-        if (user == null)
-        {
+        var token = await _authService.LoginAsync(request.Username, request.Password);
+        
+        if (token == null)
             return BadRequest("Неверное имя пользователя или пароль");
-        }
 
-        if (!BCrypt.Net.BCrypt.Verify(request.Password, user.Password))
-        {
-            return BadRequest("Неверное имя пользователя или пароль");
-        }
-
-        var jwt = GenerateJwtToken(user);
-        return Ok(new { token = jwt });
+        return Ok(new { token });
     }
 }
