@@ -18,4 +18,7 @@ public interface IRoadmapRepository
     Task RemoveNode(Node node);
     Task RemoveRoadmap(Roadmap roadmap);
     Task<bool> CheckRoadmapExists(int roadmapId);
+    Task<NodeEdge?> GetEdge(int edgeId);
+    Task AddEdge(NodeEdge edge);
+    Task RemoveEdge(NodeEdge edge);
 }

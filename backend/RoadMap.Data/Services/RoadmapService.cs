@@ -127,6 +127,18 @@ public class RoadmapService : IRoadmapService
         await _repository.SaveChanges();
     }
 
+    public async Task AddEdge(NodeEdge edge) => await _repository.AddEdge(edge);
+
+    public async Task RemoveEdge(NodeEdge edge) => await _repository.RemoveEdge(edge);
+
+    public async Task<NodeEdge> GetEdgeById(int edgeId, int userId)
+    {
+        var edge = await _repository.GetEdge(edgeId);
+        if (edge == null || edge.Roadmap.UserId != userId)
+            throw new Exception("Связь не найдена или нет прав");
+        return edge;
+    }
+
     public async Task<NodeFile> UploadNodeFileAsync(int nodeId, int userId, IFormFile file)
     {
         var node = await _repository.GetNodeWithFile(nodeId, file);

@@ -24,6 +24,7 @@ public class RoadmapRepository : IRoadmapRepository
     {
         var roadmap = await _context.Roadmaps
             .Include(n => n.Nodes)
+            .Include(r => r.Edges)
             .FirstOrDefaultAsync(r => r.UrlKey == urlKey && r.UserId == userId);
         return roadmap;
     }
@@ -33,6 +34,7 @@ public class RoadmapRepository : IRoadmapRepository
         var roadmap = await _context.Roadmaps
             .Include(n => n.Nodes)
             .ThenInclude(n => n.Files)
+            .Include(r => r.Edges)
             .FirstOrDefaultAsync(r => r.UrlKey == urlKey && r.UserId == userId);
         return roadmap;
     }
@@ -103,5 +105,20 @@ public class RoadmapRepository : IRoadmapRepository
     {
         var roadMapExists = await _context.Roadmaps.AnyAsync(r => r.Id == roadMapId);
         return roadMapExists;
+    }
+
+    public async Task<NodeEdge?> GetEdge(int edgeId) =>
+        await _context.NodeEdges.Include(e => e.Roadmap).FirstOrDefaultAsync(e => e.Id == edgeId);
+
+    public async Task AddEdge(NodeEdge edge)
+    {
+        _context.NodeEdges.Add(edge);
+        await _context.SaveChangesAsync();
+    }
+
+    public async Task RemoveEdge(NodeEdge edge)
+    {
+        _context.NodeEdges.Remove(edge);
+        await _context.SaveChangesAsync();
     }
 }

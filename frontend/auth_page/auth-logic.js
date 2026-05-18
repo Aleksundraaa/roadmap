@@ -40,7 +40,7 @@ async function handleAuth() {
     const password = document.getElementById('password').value.trim();
 
     if (!username || !password) {
-        alert("Заполните все поля!");
+        showToast("Заполните все поля!", 'error');
         return;
     }
 
@@ -74,12 +74,12 @@ async function handleAuth() {
             localStorage.setItem('token', data.token);
             window.location.href = "../start_page/index.html";
         } else {
-            alert("Регистрация успешна! Войдите в аккаунт.");
+            showToast("Регистрация успешна! Войдите в аккаунт.", 'success');
             if (!isLoginMode) toggleAuthMode();
         }
 
     } catch (err) {
-        alert(err.message);
+        showToast(err.message, 'error');
     } finally {
         btn.disabled = false;
         btn.innerText = isLoginMode ? "Войти" : "Создать аккаунт";

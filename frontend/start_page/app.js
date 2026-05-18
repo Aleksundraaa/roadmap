@@ -15,11 +15,11 @@ if (toggleSwitch) {
 
 async function createRoadmap() {
     const title = document.getElementById('newTitle').value.trim();
-    if (!title) return alert("Введите название плана!");
+    if (!title) { showToast("Введите название плана!", 'error'); return; }
 
     const token = localStorage.getItem('token');
     if (!token) {
-        alert("Сессия истекла. Пожалуйста, войдите снова.");
+        showToast("Сессия истекла. Пожалуйста, войдите снова.", 'error');
         window.location.href = "../auth_page/auth.html";
         return;
     }
@@ -46,7 +46,7 @@ async function createRoadmap() {
         const data = await response.json();
         window.location.href = `../roadmap_page/roadmap.html?key=${data.urlKey}`;
     } catch (e) {
-        alert("Ошибка сервера: " + e.message);
+        showToast("Ошибка сервера: " + e.message, 'error');
         btn.disabled = false;
         btn.innerText = "Создать холст";
     }
@@ -54,7 +54,7 @@ async function createRoadmap() {
 
 function openRoadmap() {
     const key = document.getElementById('urlKey').value.trim();
-    if (key.length !== 8) return alert("Ключ должен быть 8 символов!");
+    if (key.length !== 8) { showToast("Ключ должен быть 8 символов!", 'error'); return; }
     window.location.href = `../roadmap_page/roadmap.html?key=${key}`;
 }
 
@@ -76,40 +76,65 @@ async function loadRoadmapsList() {
         if (!response.ok) throw new Error('Ошибка сети');
         const roadmaps = await response.json();
 
+        listContainer.replaceChildren();
         if (roadmaps.length === 0) {
-            listContainer.innerHTML = '<div class="empty">Пока нет ни одного холста</div>';
+            const empty = document.createElement('div');
+            empty.className = 'empty';
+            empty.textContent = 'Пока нет ни одного холста';
+            listContainer.appendChild(empty);
             return;
         }
 
-        listContainer.innerHTML = roadmaps.map(rm => `
-        <div class="roadmap-item">
-            <a href="../roadmap_page/roadmap.html?key=${rm.urlKey}" class="roadmap-name">
-                ${rm.title || 'Без названия'}
-            </a>
-            <div class="roadmap-item-footer">
-                <span class="roadmap-key">${rm.urlKey}</span>
-                <button class="btn-copy-small" onclick="copyToClipboard('${rm.urlKey}')" title="Копировать ключ">📋</button>
-            </div>
-        </div>
-    `).join('');
+        roadmaps.forEach(rm => {
+            const item = document.createElement('div');
+            item.className = 'roadmap-item';
+
+            const link = document.createElement('a');
+            link.href = `../roadmap_page/roadmap.html?key=${rm.urlKey}`;
+            link.className = 'roadmap-name';
+            link.textContent = rm.title || 'Без названия';
+
+            const footer = document.createElement('div');
+            footer.className = 'roadmap-item-footer';
+
+            const keySpan = document.createElement('span');
+            keySpan.className = 'roadmap-key';
+            keySpan.textContent = rm.urlKey;
+
+            const copyBtn = document.createElement('button');
+            copyBtn.className = 'btn-copy-small';
+            copyBtn.title = 'Копировать ключ';
+            copyBtn.textContent = '📋';
+            copyBtn.onclick = () => copyToClipboard(rm.urlKey);
+
+            footer.appendChild(keySpan);
+            footer.appendChild(copyBtn);
+            item.appendChild(link);
+            item.appendChild(footer);
+            listContainer.appendChild(item);
+        });
 
     } catch (err) {
         console.error(err);
-        listContainer.innerHTML = '<div class="error">Не удалось загрузить список</div>';
+        listContainer.replaceChildren();
+        const errDiv = document.createElement('div');
+        errDiv.className = 'error';
+        errDiv.textContent = 'Не удалось загрузить список';
+        listContainer.appendChild(errDiv);
     }
 }
 
 function copyToClipboard(text) {
     navigator.clipboard.writeText(text).then(() => {
-        alert('Ключ скопирован: ' + text);
+        showToast('Ключ скопирован: ' + text, 'success');
     });
 }
 
 function handleLogout() {
-    if (confirm("Вы уверены, что хотите выйти?")) {
+    showConfirm("Вы уверены, что хотите выйти?", () => {
         localStorage.removeItem('token');
         window.location.href = "../auth_page/auth.html";
-    }
+    });
 }
 
 function getUsernameFromToken() {

@@ -18,4 +18,7 @@ public interface IRoadmapService
     Task<Node> GetNodeById(int id, int userId);
     Task UpdateNodeInfo(Node node, RoadmapService.UpdateNodeRequest request);
     Task<List<Roadmap>> GetAllRoadmaps(int userId);
+    Task AddEdge(NodeEdge edge);
+    Task RemoveEdge(NodeEdge edge);
+    Task<NodeEdge> GetEdgeById(int edgeId, int userId);
 }
