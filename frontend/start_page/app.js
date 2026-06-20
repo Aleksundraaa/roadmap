@@ -15,7 +15,10 @@ if (toggleSwitch) {
 
 async function createRoadmap() {
     const title = document.getElementById('newTitle').value.trim();
-    if (!title) { showToast("Введите название плана!", 'error'); return; }
+    if (!title) {
+        showToast("Введите название плана!", 'error');
+        return;
+    }
 
     const token = localStorage.getItem('token');
     if (!token) {
@@ -35,7 +38,7 @@ async function createRoadmap() {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${token}`
             },
-            body: JSON.stringify({ title: title })
+            body: JSON.stringify({title: title})
         });
 
         if (!response.ok) {
@@ -54,7 +57,10 @@ async function createRoadmap() {
 
 function openRoadmap() {
     const key = document.getElementById('urlKey').value.trim();
-    if (key.length !== 8) { showToast("Ключ должен быть 8 символов!", 'error'); return; }
+    if (key.length !== 8) {
+        showToast("Ключ должен быть 8 символов!", 'error');
+        return;
+    }
     window.location.href = `../roadmap_page/roadmap.html?key=${key}`;
 }
 
@@ -145,7 +151,7 @@ function getUsernameFromToken() {
         const base64Url = token.split('.')[1];
         const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
 
-        const jsonPayload = decodeURIComponent(window.atob(base64).split('').map(function(c) {
+        const jsonPayload = decodeURIComponent(window.atob(base64).split('').map(function (c) {
             return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
         }).join(''));
 

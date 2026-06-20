@@ -55,10 +55,10 @@ public class RoadmapService : IRoadmapService
     public async Task<Roadmap> GetRoadmapWithFiles(string urlKey, int userId)
     {
         var roadmap = await _repository.GetRoadmapWithFiles(urlKey, userId);
-        if (roadmap == null)
-        {
-            throw new Exception("Не найдена дорожная карта или не вы владелец");
-        }
+        // if (roadmap == null)
+        // {
+        //     throw new Exception("Не найдена дорожная карта или не вы владелец");
+        // }
 
         return roadmap;
     }

@@ -16,6 +16,30 @@ function showToast(message, type = 'info') {
     }, 3500);
 }
 
+function showCriticalError(message) {
+    const overlay = document.createElement('div');
+    overlay.className = 'confirm-overlay error-modal';
+
+    overlay.innerHTML = `
+        <div class="confirm-box">
+            <p class="confirm-message">${message}</p>
+            <div class="confirm-actions" style="justify-content: center;">
+                <button class="btn-home" onclick="location.href='../start_page/index.html'">
+                    Вернуться на главную
+                </button>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(overlay);
+
+    const title = document.getElementById('roadmapTitle');
+    if (title) title.textContent = "Доступ ограничен";
+
+    const canvas = document.getElementById('canvas-container');
+    if (canvas) canvas.style.filter = "blur(4px)";
+}
+
 function showConfirm(message, onConfirm) {
     const overlay = document.createElement('div');
     overlay.className = 'confirm-overlay';

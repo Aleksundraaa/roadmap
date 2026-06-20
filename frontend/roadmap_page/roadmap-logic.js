@@ -62,7 +62,14 @@ async function loadRoadmap() {
             if (response.status === 401) {
                 localStorage.removeItem('token');
                 window.location.href = '../auth_page/auth.html';
+                return;
             }
+
+            if (response.status === 404) {
+                showCriticalError("Этот холст не существует или у вас нет прав на его просмотр");
+                return;
+            }
+
             throw new Error("Не удалось загрузить холст");
         }
 
@@ -119,9 +126,9 @@ function renderNodes(nodes) {
     nodesLayer.replaceChildren();
 
     const statusMap = {
-        'todo': { text: 'В ПЛАНЕ', class: 'status-todo' },
-        'doing': { text: 'В ПРОЦЕССЕ', class: 'status-doing' },
-        'done': { text: 'ЗАВЕРШЕНО', class: 'status-done' }
+        'todo': {text: 'В ПЛАНЕ', class: 'status-todo'},
+        'doing': {text: 'В ПРОЦЕССЕ', class: 'status-doing'},
+        'done': {text: 'ЗАВЕРШЕНО', class: 'status-done'}
     };
 
     nodes.forEach(node => {
@@ -310,7 +317,7 @@ async function connectNodes(parentId, childNode) {
                 'Authorization': `Bearer ${localStorage.getItem('token')}`,
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ fromNodeId: parentId, toNodeId: childNode.id })
+            body: JSON.stringify({fromNodeId: parentId, toNodeId: childNode.id})
         });
         if (!res.ok) throw new Error("Ошибка сервера при создании связи");
     } catch (e) {
@@ -323,7 +330,7 @@ async function deleteNodeEdge(edgeId) {
     try {
         const res = await fetch(`${API_URL}/edges/${edgeId}`, {
             method: 'DELETE',
-            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+            headers: {'Authorization': `Bearer ${localStorage.getItem('token')}`}
         });
         if (res.ok) await loadRoadmap();
         else showToast("Не удалось удалить связь", 'error');

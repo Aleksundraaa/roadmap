@@ -341,7 +341,7 @@ select {
     max-height: 200px;
     overflow-y: auto;
     z-index: 1000;
-    display: none; /* Скрыт по умолчанию */
+    display: none;
     box-shadow: 0 4px 12px rgba(0,0,0,0.1);
 }
 
@@ -431,7 +431,6 @@ input:checked + .slider:before {
     transform: translateX(20px);
 }
 
-/* AI Hint panel */
 .btn-ai-hint {
     background: var(--primary);
     color: white;
@@ -674,4 +673,56 @@ input:checked + .slider:before {
     min-width: 180px;
     flex-shrink: 0;
     font-size: 0.85rem;
+}
+
+[data-tooltip] {
+    position: relative;
+}
+
+[data-tooltip]::after {
+    content: attr(data-tooltip);
+    position: absolute;
+
+    bottom: 125%;
+    left: 50%;
+    transform: translateX(-50%) translateY(10px);
+
+    background-color: rgba(31, 41, 55, 0.95);
+    color: #fff;
+    padding: 6px 12px;
+    border-radius: 8px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    white-space: nowrap;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    pointer-events: none;
+
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 10000;
+}
+
+[data-tooltip]::before {
+    content: "";
+    position: absolute;
+    bottom: 110%;
+    left: 50%;
+
+    border-width: 6px;
+    border-style: solid;
+    border-color: rgba(31, 41, 55, 0.95) transparent transparent transparent;
+
+    opacity: 0;
+    visibility: hidden;
+    transform: translateX(-50%);
+    transition: all 0.0000001s ease-out;
+    z-index: 10000;
+}
+
+[data-tooltip]:hover::after,
+[data-tooltip]:hover::before {
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(-50%) translateY(0);
 }

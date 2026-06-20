@@ -26,11 +26,21 @@ public class RoadmapController : ControllerBase
 
     private int GetUserId() => int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
 
+    [Authorize]
     [HttpGet("{urlKey}")]
     public async Task<ActionResult<Roadmap>> GetByKey(string urlKey)
     {
+        if (string.IsNullOrWhiteSpace(urlKey))
+        {
+            return BadRequest(new { message = "Key cannot be null" });
+        }
         var userId = GetUserId();
         var roadmap = await _roadmapService.GetRoadmapWithFiles(urlKey, userId);
+        
+        if (roadmap == null)
+        {
+            return NotFound(new { message = "Roadmap not found or access denied" });
+        }
         return Ok(roadmap);
     }
 
@@ -222,7 +232,6 @@ public class RoadmapController : ControllerBase
 
         _logger.LogInformation("[AI-Hint] Model content: {Content}", content);
 
-        // Убираем возможную markdown-обёртку ```json ... ```
         var cleanContent = content!.Trim();
         if (cleanContent.StartsWith("```"))
         {

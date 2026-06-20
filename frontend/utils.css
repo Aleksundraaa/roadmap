@@ -58,3 +58,29 @@
     gap: 12px;
     justify-content: flex-end;
 }
+
+.error-modal .confirm-box {
+    border-top: 5px solid #dc2626;
+    max-width: 450px;
+    text-align: center;
+}
+
+.error-modal .confirm-message {
+    font-size: 1.2rem;
+    font-weight: 600;
+}
+
+.btn-home {
+    background: #2563eb;
+    color: #fff;
+    border: none;
+    padding: 10px 24px;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.btn-home:hover {
+    background: #1d4ed8;
+}
