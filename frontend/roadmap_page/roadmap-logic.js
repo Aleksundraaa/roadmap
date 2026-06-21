@@ -45,7 +45,11 @@ async function loadRoadmap() {
         });
 
         if (!response.ok) {
-            if (response.status === 404) showCriticalError("Холст не найден");
+            if (response.status === 404) {
+                showConfirm("Холст не найден", () => {
+                    location.href = '../start_page/index.html';
+                }, 'error');
+            }
             return;
         }
 
@@ -173,7 +177,7 @@ function drawPath(from, to, edgeId = null) {
         path.style.cursor = "pointer";
         path.ondblclick = (e) => {
             e.stopPropagation();
-            showConfirm("Удалить эту связь?", () => deleteEdge(edgeId));
+            showConfirm("Удалить эту связь?", () => deleteEdge(edgeId), 'danger');
         };
     }
     svgLayer.appendChild(path);
@@ -244,7 +248,7 @@ document.getElementById('btnDeleteNode').onclick = () => {
             closeDetails();
             loadRoadmap();
         }
-    });
+    }, 'danger');
 };
 
 async function handleFileSelect(event) {
@@ -372,7 +376,7 @@ async function renameRoadmap() {
                 'Authorization': `Bearer ${token}`,
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ title: newTitle.trim() })
+            body: JSON.stringify({title: newTitle.trim()})
         });
 
         if (response.ok) {
@@ -397,7 +401,7 @@ if (deleteRoadmapBtn) {
             try {
                 const res = await fetch(`${API_URL}/${key}`, {
                     method: 'DELETE',
-                    headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+                    headers: {'Authorization': `Bearer ${localStorage.getItem('token')}`}
                 });
 
                 if (res.ok) {
@@ -408,7 +412,7 @@ if (deleteRoadmapBtn) {
             } catch (e) {
                 showToast("Ошибка сети", "error");
             }
-        });
+        }, 'danger');
     };
 }
 

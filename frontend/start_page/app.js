@@ -190,7 +190,7 @@ async function deleteRoadmap(urlKey, title) {
             console.error(e);
             showToast("Нет связи с сервером", "error");
         }
-    });
+    }, 'danger');
 }
 
 function copyToClipboard(text) {
@@ -203,7 +203,7 @@ function handleLogout() {
     showConfirm("Вы уверены, что хотите выйти?", () => {
         localStorage.removeItem('token');
         window.location.href = "../auth_page/auth.html";
-    });
+    }, 'info');
 }
 
 function getUsernameFromToken() {

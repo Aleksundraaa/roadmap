@@ -16,60 +16,46 @@ function showToast(message, type = 'info') {
     }, 3500);
 }
 
-function showCriticalError(message) {
+function showConfirm(message, onConfirm, type = 'info') {
+    const existing = document.querySelector('.confirm-overlay');
+    if (existing) existing.remove();
+
     const overlay = document.createElement('div');
-    overlay.className = 'confirm-overlay error-modal';
+    overlay.className = `confirm-overlay ${type === 'error' ? 'error-modal' : ''}`;
+
+    let mainBtnClass = 'btn-confirm-blue';
+    let btnText = 'Подтвердить';
+
+    if (type === 'danger') mainBtnClass = 'btn-confirm-danger';
+    if (type === 'error') {
+        mainBtnClass = 'btn-confirm-danger';
+        btnText = 'Вернуться на главную';
+    }
+
+    const showCancel = type !== 'error';
 
     overlay.innerHTML = `
         <div class="confirm-box">
             <p class="confirm-message">${message}</p>
-            <div class="confirm-actions" style="justify-content: center;">
-                <button class="btn-home" onclick="location.href='../start_page/index.html'">
-                    Вернуться на главную
-                </button>
+            <div class="confirm-actions">
+                <button class="modal-btn ${mainBtnClass}" id="confirm-ok">${btnText}</button>
+                ${showCancel ? '<button class="modal-btn btn-cancel-modal" id="confirm-cancel">Отмена</button>' : ''}
             </div>
         </div>
     `;
 
     document.body.appendChild(overlay);
 
-    const title = document.getElementById('roadmapTitle');
-    if (title) title.textContent = "Доступ ограничен";
+    overlay.querySelector('#confirm-ok').onclick = () => {
+        overlay.remove();
+        if (onConfirm) onConfirm();
+    };
 
-    const canvas = document.getElementById('canvas-container');
-    if (canvas) canvas.style.filter = "blur(4px)";
-}
+    if (showCancel) {
+        overlay.querySelector('#confirm-cancel').onclick = () => overlay.remove();
+    }
 
-function showConfirm(message, onConfirm) {
-    const overlay = document.createElement('div');
-    overlay.className = 'confirm-overlay';
-
-    const box = document.createElement('div');
-    box.className = 'confirm-box';
-
-    const msg = document.createElement('p');
-    msg.className = 'confirm-message';
-    msg.textContent = message;
-
-    const actions = document.createElement('div');
-    actions.className = 'confirm-actions';
-
-    const btnOk = document.createElement('button');
-    btnOk.className = 'btn-save';
-    btnOk.textContent = 'Подтвердить';
-
-    const btnCancel = document.createElement('button');
-    btnCancel.className = 'btn-cancel';
-    btnCancel.textContent = 'Отмена';
-
-    btnOk.onclick = () => { overlay.remove(); onConfirm(); };
-    btnCancel.onclick = () => overlay.remove();
-    overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
-
-    actions.appendChild(btnOk);
-    actions.appendChild(btnCancel);
-    box.appendChild(msg);
-    box.appendChild(actions);
-    overlay.appendChild(box);
-    document.body.appendChild(overlay);
+    overlay.onclick = (e) => {
+        if (e.target === overlay && type !== 'error') overlay.remove();
+    };
 }
