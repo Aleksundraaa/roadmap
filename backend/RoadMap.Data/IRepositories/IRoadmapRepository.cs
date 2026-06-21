@@ -6,9 +6,8 @@ namespace RoadMap.Data.IRepositories;
 public interface IRoadmapRepository
 {
     Task SaveChanges();
-    Task<Roadmap?> GetRoadmapWithNodes(string urlKey, int userId);
-    Task<Roadmap?> GetRoadmapWithFiles(string urlKey, int userId);
-    Task<Roadmap?> GetRoadmapWithoutNodes(string urlKey, int userId);
+    Task<Roadmap?> GetRoadmapWithNodes(string urlKey);
+    Task<Roadmap?> GetRoadmapWithoutNodes(string urlKey);
     Task<List<Roadmap>> GetRoadmapList(int userId);
     Task<Node?> GetNodeWithFile(int nodeId, IFormFile file);
     Task<Node?> GetNode(int nodeId);
@@ -21,4 +20,7 @@ public interface IRoadmapRepository
     Task<NodeEdge?> GetEdge(int edgeId);
     Task AddEdge(NodeEdge edge);
     Task RemoveEdge(NodeEdge edge);
+    Task<Roadmap> GetRoadmapWithFiles(string urlKey);
+    Task AddUserAccessIfNotExist(int userId, int roadmapId);
+    Task<List<Roadmap>> GetRoadmapListWithVisited(int userId);
 }

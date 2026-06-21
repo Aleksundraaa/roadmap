@@ -28,22 +28,23 @@ public class RoadmapController : ControllerBase
 
     [Authorize]
     [HttpGet("{urlKey}")]
-    public async Task<ActionResult<Roadmap>> GetByKey(string urlKey)
+    public async Task<ActionResult> GetRoadmapByKey(string urlKey)
     {
-        if (string.IsNullOrWhiteSpace(urlKey))
+        if (string.IsNullOrWhiteSpace(urlKey)) return BadRequest();
+    
+        var roadmap = await _roadmapService.GetRoadmapByKey(urlKey);
+
+        if (roadmap == null) return NotFound(new { message = "Холст не найден" });
+
+        var currentUserId = GetUserId();
+    
+        await _roadmapService.RecordUserVisit(currentUserId, roadmap.Id);
+
+        return Ok(new
         {
-            return BadRequest(new { message = "Key cannot be null" });
-        }
-
-        var userId = GetUserId();
-        var roadmap = await _roadmapService.GetRoadmapWithFiles(urlKey, userId);
-
-        if (roadmap == null)
-        {
-            return NotFound(new { message = "Roadmap not found or access denied" });
-        }
-
-        return Ok(roadmap);
+            roadmap = roadmap,
+            isOwner = (roadmap.UserId == currentUserId)
+        });
     }
 
     public record CreateRoadmapRequest(string Title);
@@ -74,7 +75,7 @@ public class RoadmapController : ControllerBase
     public async Task<IActionResult> AddNode(string urlKey, [FromBody] AddNodeRequest request)
     {
         var userId = GetUserId();
-        var roadmap = await _roadmapService.GetRoadmapByKey(urlKey, userId);
+        var roadmap = await _roadmapService.GetRoadmapByKey(urlKey);
 
         var node = new Node
         {
@@ -113,7 +114,7 @@ public class RoadmapController : ControllerBase
     public async Task<IActionResult> AddEdge(string urlKey, [FromBody] AddEdgeRequest request)
     {
         var userId = GetUserId();
-        var roadmap = await _roadmapService.GetRoadmapByKey(urlKey, userId);
+        var roadmap = await _roadmapService.GetRoadmapByKey(urlKey);
         var edge = new NodeEdge
         {
             FromNodeId = request.FromNodeId,
@@ -137,7 +138,7 @@ public class RoadmapController : ControllerBase
     public async Task<IActionResult> DeleteRoadmap(string key)
     {
         var userId = GetUserId();
-        var roadmap = await _roadmapService.GetRoadmapWithNodes(key, userId);
+        var roadmap = await _roadmapService.GetRoadmapWithNodes(key);
         await _roadmapService.DeleteRoadmap(roadmap);
         return Ok();
     }
@@ -165,11 +166,20 @@ public class RoadmapController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<Roadmap>>> GetMyRoadmaps()
+    public async Task<ActionResult> GetMyRoadmaps()
     {
         var userId = GetUserId();
         var roadmaps = await _roadmapService.GetAllRoadmaps(userId);
-        return Ok(roadmaps);
+
+        var result = roadmaps.Select(r => new
+        {
+            r.Id,
+            r.Title,
+            r.UrlKey,
+            Role = (r.UserId == userId ? "Владелец" : "Соавтор")
+        });
+
+        return Ok(result);
     }
 
 
@@ -188,7 +198,7 @@ public class RoadmapController : ControllerBase
         [FromServices] IConfiguration configuration)
     {
         var userId = GetUserId();
-        var roadmap = await _roadmapService.GetRoadmapWithNodes(urlKey, userId);
+        var roadmap = await _roadmapService.GetRoadmapWithNodes(urlKey);
 
         var apiKey = configuration["OpenRouter:ApiKey"];
         var model = configuration["OpenRouter:Model"] ?? "openai/gpt-4o-mini";

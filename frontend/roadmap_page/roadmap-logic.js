@@ -1,9 +1,16 @@
 const API_URL = 'http://localhost:5000/api/Roadmap';
 const NODE_WIDTH = 200;
 const NODE_HEIGHT = 120;
-let connectionSource = null;
+const EDGE_COLORS = {
+    'todo': '#94a3b8',
+    'doing': '#f59e0b',
+    'done': '#10b981',
+    'default': '#0088ff'
+};
+
 let roadmapData = null;
 let currentNode = null;
+let connectionSource = null;
 
 let scale = 1;
 let pointX = 0;
@@ -25,50 +32,33 @@ const svgLayer = document.getElementById('canvas-svg');
 async function loadRoadmap() {
     const params = new URLSearchParams(window.location.search);
     const key = params.get('key');
-
     if (!key) return window.location.href = '../start_page/index.html';
 
     const token = localStorage.getItem('token');
-    if (!token) {
-        window.location.href = '../auth_page/auth.html';
-        return;
-    }
+    if (!token) return window.location.href = '../auth_page/auth.html';
 
     document.getElementById('roadmapKey').innerText = key;
 
     try {
         const response = await fetch(`${API_URL}/${key}`, {
-            method: 'GET',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-            }
+            headers: {'Authorization': `Bearer ${token}`}
         });
 
         if (!response.ok) {
-            if (response.status === 401) {
-                localStorage.removeItem('token');
-                window.location.href = '../auth_page/auth.html';
-                return;
-            }
-
-            if (response.status === 404) {
-                showCriticalError("Этот холст не существует или у вас нет прав на его просмотр");
-                return;
-            }
-
-            throw new Error("Не удалось загрузить холст");
+            if (response.status === 404) showCriticalError("Холст не найден");
+            return;
         }
 
-        roadmapData = await response.json();
+        const data = await response.json();
+        console.log("Данные загружены:", data);
 
-        const titleDisplay = roadmapData.title || "Без названия";
-        document.getElementById('roadmapTitle').innerText = titleDisplay;
+        roadmapData = data.roadmap;
+        document.getElementById('roadmapTitle').innerText = roadmapData.title || "Без названия";
 
-        renderNodes(roadmapData.nodes);
-        renderEdges(roadmapData.nodes, roadmapData.edges || []);
+        renderNodes(roadmapData.nodes || []);
+        renderEdges(roadmapData.nodes || [], roadmapData.edges || []);
 
-        if (roadmapData.nodes.length > 0 && pointX === 0) {
+        if (roadmapData.nodes && roadmapData.nodes.length > 0 && pointX === 0) {
             centerOnNode(roadmapData.nodes[0]);
         }
     } catch (e) {
@@ -76,43 +66,8 @@ async function loadRoadmap() {
     }
 }
 
-async function handleSave() {
-    if (!currentNode) return;
-
-    const updatedData = {
-        title: document.getElementById('node-edit-title').value,
-        description: document.getElementById('node-edit-desc').value,
-        x: currentNode.x,
-        y: currentNode.y,
-        parentNodeId: currentNode.parentNodeId,
-        status: document.getElementById('node-edit-status').value
-    };
-
-    try {
-        const res = await fetch(`${API_URL}/nodes/${currentNode.id}`, {
-            method: 'PUT',
-            headers: {
-                'Authorization': `Bearer ${localStorage.getItem('token')}`,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(updatedData)
-        });
-
-        if (res.ok) {
-            closeDetails();
-            await loadRoadmap();
-        } else {
-            showToast("Не удалось сохранить изменения", 'error');
-        }
-    } catch (e) {
-        console.error("Ошибка при сохранении:", e);
-    }
-}
-
 function renderNodes(nodes) {
-    if (!nodes) return;
     nodesLayer.replaceChildren();
-
     const statusMap = {
         'todo': {text: 'В ПЛАНЕ', class: 'status-todo'},
         'doing': {text: 'В ПРОЦЕССЕ', class: 'status-doing'},
@@ -125,54 +80,19 @@ function renderNodes(nodes) {
         card.style.left = `${Math.round(node.x)}px`;
         card.style.top = `${Math.round(node.y)}px`;
 
-        const statusInfo = statusMap[node.status || 'todo'];
+        const status = statusMap[node.status || 'todo'];
 
         if (connectionSource && connectionSource.id === node.id) {
             card.style.outline = '3px solid var(--primary)';
         }
 
-        const statusBadge = document.createElement('div');
-        statusBadge.className = `node-status ${statusInfo.class}`;
-        statusBadge.textContent = statusInfo.text;
-        card.appendChild(statusBadge);
-
-        const filesCount = node.files ? node.files.length : 0;
-        if (filesCount > 0) {
-            const badge = document.createElement('div');
-            badge.className = `node-files-count ${statusInfo.class}`;
-            badge.style.cssText = 'font-size:0.65rem;font-weight:700;margin-top:4px;';
-            badge.textContent = `КОНСПЕКТЫ: ${filesCount}`;
-            card.appendChild(badge);
-        }
-
-        const title = document.createElement('h3');
-        title.textContent = node.title;
-        card.appendChild(title);
-
-        const desc = document.createElement('p');
-        desc.className = 'node-desc';
-        desc.textContent = node.description || 'Нет описания';
-        card.appendChild(desc);
-
-        const line = document.createElement('div');
-        line.className = `node-line ${node.status || 'todo'}`;
-        card.appendChild(line);
-
-        card.onclick = async (e) => {
-            if (e.altKey) {
-                e.stopPropagation();
-                if (!connectionSource) {
-                    connectionSource = node;
-                    renderNodes(roadmapData.nodes);
-                } else {
-                    if (connectionSource.id !== node.id) {
-                        await connectNodes(connectionSource.id, node);
-                    }
-                    connectionSource = null;
-                    await loadRoadmap();
-                }
-            }
-        };
+        card.innerHTML = `
+            <div class="node-status ${status.class}">${status.text}</div>
+            ${node.files?.length > 0 ? `<div class="node-files-count">📎 Конспектов: ${node.files.length}</div>` : ''}
+            <h3>${node.title}</h3>
+            <p class="node-desc">${node.description || 'Нет описания'}</p>
+            <div class="node-line ${node.status || 'todo'}"></div>
+        `;
 
         card.ondblclick = (e) => {
             e.stopPropagation();
@@ -180,8 +100,7 @@ function renderNodes(nodes) {
         };
 
         card.onmousedown = (e) => {
-            if (e.altKey) return;
-            if (e.button !== 0) return;
+            if (e.altKey || e.button !== 0) return;
             e.stopPropagation();
             isDraggingNode = true;
             draggedNodeElement = card;
@@ -191,140 +110,73 @@ function renderNodes(nodes) {
             card.style.cursor = 'grabbing';
         };
 
+        card.onclick = async (e) => {
+            if (e.altKey) {
+                e.stopPropagation();
+                if (!connectionSource) {
+                    connectionSource = node;
+                    showToast("Выберите вторую ноду для связи", "info");
+                    renderNodes(roadmapData.nodes);
+                } else {
+                    if (connectionSource.id !== node.id) await connectNodes(connectionSource.id, node.id);
+                    connectionSource = null;
+                    await loadRoadmap();
+                }
+            }
+        };
+
         nodesLayer.appendChild(card);
     });
 }
 
 function renderEdges(nodes, edges) {
-    if (!nodes || !svgLayer) return;
     svgLayer.replaceChildren();
-
-    const colors = {
-        todo: '#8B0000',
-        doing: '#f59e0b',
-        done: '#10b981',
-        default: '#0088ff'
-    };
-
-    function makeEdgePath(fromNode, toNode) {
-        const x1 = fromNode.x + NODE_WIDTH / 2;
-        const y1 = fromNode.y + NODE_HEIGHT / 2;
-        const x2 = toNode.x + NODE_WIDTH / 2;
-        const y2 = toNode.y + NODE_HEIGHT / 2;
-        const cp = x1 + (x2 - x1) / 2;
-
-        let edgeColor = colors.default;
-        const s1 = fromNode.status || 'todo';
-        const s2 = toNode.status || 'todo';
-        if (s1 === s2) {
-            edgeColor = colors[s1];
-        } else if ((s1 === 'todo' && s2 === 'doing') || (s1 === 'doing' && s2 === 'todo')) {
-            edgeColor = '#bc4f06';
-        } else if ((s1 === 'doing' && s2 === 'done') || (s1 === 'done' && s2 === 'doing')) {
-            edgeColor = '#82ab46';
-        }
-
-        const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
-        path.setAttribute("d", `M ${x1} ${y1} C ${cp} ${y1}, ${cp} ${y2}, ${x2} ${y2}`);
-        path.setAttribute("fill", "none");
-        path.setAttribute("stroke", edgeColor);
-        path.setAttribute("stroke-width", "4.5");
-        path.setAttribute("opacity", "0.8");
-        path.style.cursor = "pointer";
-        return path;
-    }
 
     nodes.forEach(node => {
         if (node.parentNodeId) {
             const parent = nodes.find(n => n.id === node.parentNodeId);
             if (parent) {
-                const path = makeEdgePath(parent, node);
-                path.ondblclick = (e) => {
-                    e.stopPropagation();
-                    showConfirm(`Удалить связь между "${parent.title}" и "${node.title}"?`, async () => {
-                        await deleteEdge(node);
-                    });
-                };
-                svgLayer.appendChild(path);
+                drawPath(parent, node);
             }
         }
     });
 
     (edges || []).forEach(edge => {
-        const fromNode = nodes.find(n => n.id === edge.fromNodeId);
-        const toNode = nodes.find(n => n.id === edge.toNodeId);
-        if (fromNode && toNode) {
-            const path = makeEdgePath(fromNode, toNode);
-            path.ondblclick = (e) => {
-                e.stopPropagation();
-                showConfirm(`Удалить связь между "${fromNode.title}" и "${toNode.title}"?`, async () => {
-                    await deleteNodeEdge(edge.id);
-                });
-            };
-            svgLayer.appendChild(path);
+        const from = nodes.find(n => n.id === edge.fromNodeId);
+        const to = nodes.find(n => n.id === edge.toNodeId);
+        if (from && to) {
+            drawPath(from, to, edge.id);
         }
     });
 }
 
-async function deleteEdge(childNode) {
-    const updatedData = {
-        title: childNode.title,
-        description: childNode.description,
-        x: childNode.x,
-        y: childNode.y,
-        parentNodeId: null,
-        status: childNode.status || "todo"
-    };
+function drawPath(from, to, edgeId = null) {
+    const x1 = from.x + NODE_WIDTH / 2;
+    const y1 = from.y + NODE_HEIGHT / 2;
+    const x2 = to.x + NODE_WIDTH / 2;
+    const y2 = to.y + NODE_HEIGHT / 2;
+    const cp = x1 + (x2 - x1) / 2;
 
-    try {
-        const res = await fetch(`${API_URL}/nodes/${childNode.id}`, {
-            method: 'PUT',
-            headers: {
-                'Authorization': `Bearer ${localStorage.getItem('token')}`,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(updatedData)
-        });
+    const status = to.status || 'todo';
+    const color = EDGE_COLORS[status] || EDGE_COLORS.default;
 
-        if (res.ok) {
-            await loadRoadmap();
-        } else {
-            showToast("Не удалось удалить связь на сервере", 'error');
-        }
-    } catch (e) {
-        console.error("Ошибка при удалении связи:", e);
+    const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    path.setAttribute("d", `M ${x1} ${y1} C ${cp} ${y1}, ${cp} ${y2}, ${x2} ${y2}`);
+    path.setAttribute("fill", "none");
+
+    path.setAttribute("stroke", color);
+    path.setAttribute("stroke-width", "4");
+
+    path.setAttribute("opacity", status === 'done' ? "0.9" : "0.5");
+
+    if (edgeId) {
+        path.style.cursor = "pointer";
+        path.ondblclick = (e) => {
+            e.stopPropagation();
+            showConfirm("Удалить эту связь?", () => deleteEdge(edgeId));
+        };
     }
-}
-
-async function connectNodes(parentId, childNode) {
-    const key = new URLSearchParams(window.location.search).get('key');
-    try {
-        const res = await fetch(`${API_URL}/${key}/edges`, {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${localStorage.getItem('token')}`,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({fromNodeId: parentId, toNodeId: childNode.id})
-        });
-        if (!res.ok) throw new Error("Ошибка сервера при создании связи");
-    } catch (e) {
-        console.error(e);
-        showToast("Не удалось сохранить связь", 'error');
-    }
-}
-
-async function deleteNodeEdge(edgeId) {
-    try {
-        const res = await fetch(`${API_URL}/edges/${edgeId}`, {
-            method: 'DELETE',
-            headers: {'Authorization': `Bearer ${localStorage.getItem('token')}`}
-        });
-        if (res.ok) await loadRoadmap();
-        else showToast("Не удалось удалить связь", 'error');
-    } catch (e) {
-        console.error(e);
-    }
+    svgLayer.appendChild(path);
 }
 
 function showNodeDetails(node) {
@@ -332,116 +184,51 @@ function showNodeDetails(node) {
     document.getElementById('node-edit-title').value = node.title || "";
     document.getElementById('node-edit-desc').value = node.description || "";
     document.getElementById('node-edit-status').value = node.status || "todo";
-    document.getElementById('node-modal').classList.add('active');
 
     const display = document.getElementById('conspect-display');
     display.replaceChildren();
-
-    if (node.files && node.files.length > 0) {
-        node.files.forEach(file => {
-            const fileUrl = `http://localhost:5000/uploads/${file.storagePath}`;
-            const item = document.createElement('div');
-            item.className = 'file-item';
-            item.style.marginBottom = '5px';
-            const link = document.createElement('a');
-            link.href = fileUrl;
-            link.target = '_blank';
-            link.className = 'file-link';
-            link.textContent = file.fileName;
-            item.appendChild(link);
-            display.appendChild(item);
+    if (node.files?.length > 0) {
+        node.files.forEach(f => {
+            const div = document.createElement('div');
+            div.className = 'file-item';
+            div.innerHTML = `<a href="http://localhost:5000/uploads/${f.storagePath}" target="_blank">📄 ${f.fileName}</a>`;
+            display.appendChild(div);
         });
     } else {
-        const p = document.createElement('p');
-        p.style.color = '#888';
-        p.textContent = 'Конспекты не прикреплены';
-        display.appendChild(p);
+        display.innerHTML = '<p style="color:#888; font-size:0.8rem">Нет прикрепленных файлов</p>';
     }
-}
-
-let selectedFile = null;
-
-function handleFileSelect(event) {
-    selectedFile = event.target.files[0];
-    if (selectedFile) {
-        document.getElementById('uploadBtn').style.display = 'inline-block';
-        const display = document.getElementById('conspect-display');
-        display.replaceChildren();
-        display.textContent = 'Выбран файл: ';
-        const strong = document.createElement('strong');
-        strong.textContent = selectedFile.name;
-        display.appendChild(strong);
-    }
-}
-
-async function handleFileSelect(event) {
-    const file = event.target.files[0];
-    if (!file || !currentNode) return;
-
-    const formData = new FormData();
-    formData.append('file', file);
-
-    const display = document.getElementById('conspect-display');
-    display.replaceChildren();
-    const loadingP = document.createElement('p');
-    loadingP.style.color = 'var(--primary)';
-    loadingP.textContent = 'Загрузка...';
-    display.appendChild(loadingP);
-
-    try {
-        const response = await fetch(`${API_URL}/nodes/${currentNode.id}/upload-conspect`, {
-            method: 'POST',
-            body: formData,
-            headers: {
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
-            }
-        });
-
-        if (response.ok) {
-            const data = await response.json();
-            currentNode.conspectPath = data.fileName;
-            showNodeDetails(currentNode);
-            await loadRoadmap();
-        } else {
-            const error = await response.text();
-            showToast("Ошибка при загрузке: " + error, 'error');
-        }
-    } catch (err) {
-        console.error("Ошибка сети:", err);
-    }
-}
-
-async function uploadConspect() {
-    if (!selectedFile || !selectedNodeId) return;
-
-    const formData = new FormData();
-    formData.append('file', selectedFile);
-
-    try {
-        const response = await fetch(`${API_URL}/roadmap/nodes/${selectedNodeId}/upload-conspect`, {
-            method: 'POST',
-            body: formData,
-            headers: {
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
-            }
-        });
-
-        if (response.ok) {
-            const data = await response.json();
-            document.getElementById('uploadBtn').style.display = 'none';
-            loadRoadmap();
-        } else {
-            const error = await response.text();
-            showToast("Ошибка: " + error, 'error');
-        }
-    } catch (err) {
-        console.error("Критическая ошибка загрузки:", err);
-    }
+    document.getElementById('node-modal').classList.add('active');
 }
 
 function closeDetails() {
     document.getElementById('node-modal').classList.remove('active');
     currentNode = null;
+}
+
+async function handleSave() {
+    if (!currentNode) return;
+    const updated = {
+        title: document.getElementById('node-edit-title').value,
+        description: document.getElementById('node-edit-desc').value,
+        status: document.getElementById('node-edit-status').value,
+        x: currentNode.x,
+        y: currentNode.y,
+        parentNodeId: currentNode.parentNodeId
+    };
+
+    const res = await fetch(`${API_URL}/nodes/${currentNode.id}`, {
+        method: 'PUT',
+        headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`,
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(updated)
+    });
+    if (res.ok) {
+        closeDetails();
+        await loadRoadmap();
+        showToast("Сохранено", "success");
+    }
 }
 
 document.getElementById('btnSaveNode').onclick = handleSave;
@@ -451,9 +238,7 @@ document.getElementById('btnDeleteNode').onclick = () => {
     showConfirm(`Удалить тему "${currentNode.title}"?`, async () => {
         const res = await fetch(`${API_URL}/nodes/${currentNode.id}`, {
             method: 'DELETE',
-            headers: {
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
-            }
+            headers: {'Authorization': `Bearer ${localStorage.getItem('token')}`}
         });
         if (res.ok) {
             closeDetails();
@@ -462,29 +247,29 @@ document.getElementById('btnDeleteNode').onclick = () => {
     });
 };
 
-document.getElementById('node-edit-title').onkeydown = (e) => {
-    if (e.key === 'Enter') {
-        e.preventDefault();
-        handleSave();
-    }
-};
+async function handleFileSelect(event) {
+    const file = event.target.files[0];
+    if (!file || !currentNode) return;
 
-document.getElementById('node-edit-desc').onkeydown = (e) => {
-    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
-        e.preventDefault();
-        handleSave();
-    }
-};
+    const formData = new FormData();
+    formData.append('file', file);
 
-window.onkeydown = (e) => {
-    if (e.key === 'Escape') {
-        closeDetails();
-        closeHelp();
-    }
-};
+    try {
+        const res = await fetch(`${API_URL}/nodes/${currentNode.id}/upload-conspect`, {
+            method: 'POST',
+            headers: {'Authorization': `Bearer ${localStorage.getItem('token')}`},
+            body: formData
+        });
 
-function handleOverlayClick(e) {
-    if (e.target.id === 'node-modal') closeDetails();
+        if (res.ok) {
+            showToast("Файл загружен", "success");
+            await loadRoadmap();
+            const freshNode = roadmapData.nodes.find(n => n.id === currentNode.id);
+            if (freshNode) showNodeDetails(freshNode);
+        }
+    } catch (err) {
+        console.error(err);
+    }
 }
 
 window.onmousemove = (e) => {
@@ -505,21 +290,18 @@ window.onmousemove = (e) => {
 
 window.onmouseup = async () => {
     if (isDraggingNode && draggedNodeData) {
-        const updated = {
-            title: draggedNodeData.title,
-            description: draggedNodeData.description,
-            x: Math.round(draggedNodeData.x),
-            y: Math.round(draggedNodeData.y),
-            parentNodeId: draggedNodeData.parentNodeId,
-            status: draggedNodeData.status || "todo"
-        };
         await fetch(`${API_URL}/nodes/${draggedNodeData.id}`, {
             method: 'PUT',
             headers: {
                 'Authorization': `Bearer ${localStorage.getItem('token')}`,
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify(updated)
+            body: JSON.stringify({
+                ...draggedNodeData,
+                x: Math.round(draggedNodeData.x),
+                y: Math.round(draggedNodeData.y),
+                status: draggedNodeData.status || "todo"
+            })
         });
     }
     isDraggingNode = false;
@@ -527,16 +309,6 @@ window.onmouseup = async () => {
     draggedNodeElement = null;
     container.style.cursor = 'grab';
 };
-
-function centerOnNode(node) {
-    pointX = (window.innerWidth / 2) - node.x - (NODE_WIDTH / 2);
-    pointY = (window.innerHeight / 2) - node.y - (NODE_HEIGHT / 2);
-    updateTransform();
-}
-
-function updateTransform() {
-    content.style.transform = `translate(${pointX}px, ${pointY}px) scale(${scale})`;
-}
 
 container.onwheel = (e) => {
     e.preventDefault();
@@ -550,16 +322,10 @@ container.onwheel = (e) => {
     scale = newScale;
     updateTransform();
 };
+
 container.onmousedown = (e) => {
     if (e.altKey) return;
-
     if (e.target === container || e.target === nodesLayer || e.target === svgLayer) {
-        if (connectionSource) {
-            connectionSource = null;
-            renderNodes(roadmapData.nodes);
-        }
-
-        e.preventDefault();
         isPanning = true;
         startPanX = e.clientX - pointX;
         startPanY = e.clientY - pointY;
@@ -567,19 +333,116 @@ container.onmousedown = (e) => {
     }
 };
 
-document.getElementById('btnCreateNode').onclick = async () => {
+function updateTransform() {
+    content.style.transform = `translate(${pointX}px, ${pointY}px) scale(${scale})`;
+}
+
+function centerOnNode(node) {
+    pointX = (window.innerWidth / 2) - node.x - (NODE_WIDTH / 2);
+    pointY = (window.innerHeight / 2) - node.y - (NODE_HEIGHT / 2);
+    updateTransform();
+}
+
+async function connectNodes(fromId, toId) {
     const key = new URLSearchParams(window.location.search).get('key');
-    const newNode = {title: "Новая тема", description: "", x: 3000, y: 3000};
-    const res = await fetch(`${API_URL}/${key}/nodes`, {
+    await fetch(`${API_URL}/${key}/edges`, {
         method: 'POST',
         headers: {
             'Authorization': `Bearer ${localStorage.getItem('token')}`,
             'Content-Type': 'application/json'
         },
+        body: JSON.stringify({fromNodeId: fromId, toNodeId: toId})
+    });
+}
+
+async function renameRoadmap() {
+    const titleElement = document.getElementById('roadmapTitle');
+    const oldTitle = titleElement.innerText;
+    const newTitle = prompt("Введите новое название холста:", oldTitle);
+
+    if (!newTitle || newTitle.trim() === "" || newTitle === oldTitle) return;
+
+    const key = new URLSearchParams(window.location.search).get('key');
+    const token = localStorage.getItem('token');
+
+    try {
+        const response = await fetch(`${API_URL}/${key}/update`, {
+            method: 'PATCH',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ title: newTitle.trim() })
+        });
+
+        if (response.ok) {
+            titleElement.innerText = newTitle.trim();
+            if (roadmapData) roadmapData.title = newTitle.trim(); // Обновляем локальные данные
+            showToast("Название обновлено", "success");
+        } else {
+            showToast("Ошибка при переименовании", "error");
+        }
+    } catch (e) {
+        console.error(e);
+        showToast("Нет связи с сервером", "error");
+    }
+}
+
+const deleteRoadmapBtn = document.getElementById('btnDeleteRoadmap');
+if (deleteRoadmapBtn) {
+    deleteRoadmapBtn.onclick = () => {
+        const key = new URLSearchParams(window.location.search).get('key');
+
+        showConfirm("Вы уверены, что хотите полностью удалить этот холст?", async () => {
+            try {
+                const res = await fetch(`${API_URL}/${key}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+                });
+
+                if (res.ok) {
+                    window.location.href = '../start_page/index.html';
+                } else {
+                    showToast("Не удалось удалить холст", "error");
+                }
+            } catch (e) {
+                showToast("Ошибка сети", "error");
+            }
+        });
+    };
+}
+
+document.getElementById('btnCreateNode').onclick = async () => {
+    const key = new URLSearchParams(window.location.search).get('key');
+    const centerX = (window.innerWidth / 2 - pointX) / scale;
+    const centerY = (window.innerHeight / 2 - pointY) / scale;
+    const newNode = {title: "Новая тема", description: "", x: centerX, y: centerY};
+    const res = await fetch(`${API_URL}/${key}/nodes`, {
+        method: 'POST',
+        headers: {'Authorization': `Bearer ${localStorage.getItem('token')}`, 'Content-Type': 'application/json'},
         body: JSON.stringify(newNode)
     });
-    if (res.ok) loadRoadmap();
+    if (res.ok) {
+        loadRoadmap();
+    }
 };
+
+document.getElementById('node-edit-title').onkeydown = (e) => {
+    if (e.key === 'Enter') handleSave();
+};
+document.getElementById('node-edit-desc').onkeydown = (e) => {
+    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) handleSave();
+};
+window.onkeydown = (e) => {
+    if (e.key === 'Escape') {
+        closeDetails();
+        if (window.closeHelp) closeHelp();
+    }
+};
+
+function applyTheme() {
+    document.documentElement.setAttribute('data-theme', localStorage.getItem('theme') || 'light');
+}
 
 function switchThemeToggle() {
     const next = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
@@ -587,156 +450,8 @@ function switchThemeToggle() {
     localStorage.setItem('theme', next);
 }
 
-function applyTheme() {
-    document.documentElement.setAttribute('data-theme', localStorage.getItem('theme') || 'light');
-}
-
-function copyKey() {
-    navigator.clipboard.writeText(document.getElementById('roadmapKey').innerText);
-    const status = document.getElementById('copyStatus');
-    status.style.display = 'inline';
-    setTimeout(() => status.style.display = 'none', 2000);
-}
-
-function handleSearch() {
-    const query = document.getElementById('nodeSearch').value.toLowerCase();
-    const resultsContainer = document.getElementById('searchResults');
-
-    if (!query) {
-        resultsContainer.style.display = 'none';
-        return;
-    }
-
-    const filtered = roadmapData.nodes.filter(n =>
-        n.title.toLowerCase().includes(query)
-    );
-
-    if (filtered.length > 0) {
-        resultsContainer.replaceChildren();
-        filtered.forEach(node => {
-            const item = document.createElement('div');
-            item.className = 'search-item';
-            item.textContent = node.title;
-            item.onclick = () => goToNode(node.id);
-            resultsContainer.appendChild(item);
-        });
-        resultsContainer.style.display = 'block';
-    } else {
-        resultsContainer.style.display = 'none';
-    }
-}
-
-function goToNode(nodeId) {
-    const node = roadmapData.nodes.find(n => n.id === nodeId);
-    if (node) {
-        centerOnNode(node);
-
-        const nodeElements = document.querySelectorAll('.node');
-        nodeElements.forEach(el => {
-            if (parseInt(el.style.left) === Math.round(node.x) &&
-                parseInt(el.style.top) === Math.round(node.y)) {
-                el.style.boxShadow = "0 0 20px var(--primary)";
-                setTimeout(() => el.style.boxShadow = "", 2000);
-            }
-        });
-    }
-    document.getElementById('nodeSearch').value = '';
-    document.getElementById('searchResults').style.display = 'none';
-}
-
-window.addEventListener('click', (e) => {
-    if (!e.target.closest('.search-container')) {
-        document.getElementById('searchResults').style.display = 'none';
-    }
-});
-
-document.getElementById('btnDeleteRoadmap').onclick = () => {
-    const params = new URLSearchParams(window.location.search);
-    const key = params.get('key');
-    const title = document.getElementById('roadmapTitle').innerText;
-
-    if (!key) return;
-
-    showConfirm(`Вы уверены, что хотите полностью удалить холст "${title}"? Это действие нельзя отменить.`, async () => {
-        try {
-            const res = await fetch(`${API_URL}/${key}`, {
-                method: 'DELETE',
-                headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`
-                }
-            });
-
-            if (res.ok) {
-                window.location.href = '../start_page/index.html';
-            } else {
-                const errorData = await res.json();
-                showToast(`Ошибка при удалении: ${errorData.message || 'Не удалось удалить холст'}`, 'error');
-            }
-        } catch (err) {
-            console.error(err);
-            showToast('Ошибка при обращении к серверу.', 'error');
-        }
-    });
-};
-
-async function renameRoadmap() {
-    const titleElement = document.getElementById('roadmapTitle');
-    const oldTitle = titleElement.innerText;
-
-    // 1. Показываем системное окно ввода
-    // Оно вернет текст или null, если нажали "Отмена"
-    const newTitle = prompt("Введите новое название для этого холста:", oldTitle);
-
-    // 2. Проверяем ввод: если отмена, пусто или то же самое — выходим
-    if (newTitle === null || newTitle.trim() === "" || newTitle === oldTitle) {
-        return;
-    }
-
-    const params = new URLSearchParams(window.location.search);
-    const key = params.get('key');
-    const token = localStorage.getItem('token');
-
-    try {
-        // 3. Отправляем запрос на бэкенд
-        // Путь должен совпадать с контроллером: [HttpPatch("{urlKey}/update")]
-        const response = await fetch(`${API_URL}/${key}/update`, {
-            method: 'PATCH',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({title: newTitle.trim()}) // Наш Record на бэке ждет поле Title
-        });
-
-        if (response.ok) {
-            // 4. Если сервер сохранил, меняем текст в заголовке
-            titleElement.innerText = newTitle.trim();
-
-            // Если у тебя есть функция showToast, вызываем её для красоты
-            if (typeof showToast === 'function') {
-                showToast("Название успешно изменено", "success");
-            }
-        } else {
-            const errorData = await response.json().catch(() => ({}));
-            alert("Ошибка сервера: " + (errorData.message || response.status));
-        }
-    } catch (e) {
-        console.error("Ошибка при переименовании:", e);
-        alert("Не удалось связаться с сервером.");
-    }
-}
-
-function toggleHelpPanel() {
-    const modal = document.getElementById('help-modal');
-    modal.classList.toggle('active');
-}
-
-function closeHelp() {
-    document.getElementById('help-modal').classList.remove('active');
-}
-
-function closeHelpIfOverlay(e) {
-    if (e.target.id === 'help-modal') closeHelp();
+function handleOverlayClick(e) {
+    if (e.target.id === 'node-modal') closeDetails();
 }
 
 applyTheme();

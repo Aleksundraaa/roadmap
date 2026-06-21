@@ -69,20 +69,24 @@ const API_BASE = 'http://localhost:5000/api/Roadmap';
 async function loadRoadmapsList() {
     const listContainer = document.getElementById('roadmap-list');
     const token = localStorage.getItem('token');
+
     if (!token) {
         window.location.href = "../auth_page/auth.html";
         return;
     }
+
     try {
         const response = await fetch(API_BASE, {
             headers: {
                 'Authorization': `Bearer ${token}`
             }
         });
+
         if (!response.ok) throw new Error('Ошибка сети');
         const roadmaps = await response.json();
 
         listContainer.replaceChildren();
+
         if (roadmaps.length === 0) {
             const empty = document.createElement('div');
             empty.className = 'empty';
@@ -94,13 +98,25 @@ async function loadRoadmapsList() {
         roadmaps.forEach(rm => {
             const item = document.createElement('div');
             item.className = 'roadmap-item';
+
             item.onclick = () => {
                 window.location.href = `../roadmap_page/roadmap.html?key=${rm.urlKey}`;
             };
 
+            const header = document.createElement('div');
+            header.className = 'roadmap-item-header-row';
+
             const title = document.createElement('span');
             title.className = 'roadmap-name';
             title.textContent = rm.title || 'Без названия';
+
+            const roleBadge = document.createElement('span');
+            const roleClass = rm.role === 'Владелец' ? 'badge-owner' : 'badge-author';
+            roleBadge.className = `role-badge ${roleClass}`;
+            roleBadge.textContent = rm.role || 'Соавтор';
+
+            header.appendChild(title);
+            header.appendChild(roleBadge);
 
             const footer = document.createElement('div');
             footer.className = 'roadmap-item-footer';
@@ -120,24 +136,26 @@ async function loadRoadmapsList() {
                 e.stopPropagation();
                 copyToClipboard(rm.urlKey);
             };
-
-            const deleteBtn = document.createElement('button');
-            deleteBtn.className = 'btn-delete-small';
-            deleteBtn.title = 'Удалить холст';
-            deleteBtn.textContent = '🗑️';
-            deleteBtn.onclick = (e) => {
-                e.stopPropagation();
-                deleteRoadmap(rm.urlKey, rm.title);
-            };
-
             actions.appendChild(copyBtn);
-            actions.appendChild(deleteBtn);
+
+            if (rm.role === 'Владелец') {
+                const deleteBtn = document.createElement('button');
+                deleteBtn.className = 'btn-delete-small';
+                deleteBtn.title = 'Удалить холст';
+                deleteBtn.textContent = '🗑️';
+                deleteBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    deleteRoadmap(rm.urlKey, rm.title);
+                };
+                actions.appendChild(deleteBtn);
+            }
 
             footer.appendChild(keySpan);
             footer.appendChild(actions);
 
-            item.appendChild(title);
+            item.appendChild(header);
             item.appendChild(footer);
+
             listContainer.appendChild(item);
         });
 

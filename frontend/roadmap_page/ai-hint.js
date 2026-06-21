@@ -193,7 +193,6 @@ async function addAllSuggestedNodes() {
 
     await loadRoadmap();
 
-    // Соединяем ноды цепочкой: 0→1→2
     for (let i = 0; i < createdIds.length - 1; i++) {
         if (!createdIds[i] || !createdIds[i + 1]) continue;
         const parent = roadmapData.nodes.find(n => n.id === createdIds[i]);

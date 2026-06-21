@@ -1,5 +1,5 @@
 using Microsoft.EntityFrameworkCore;
-using RoadMap.Data.Entities; 
+using RoadMap.Data.Entities;
 
 namespace RoadMap.Data;
 
@@ -8,8 +8,9 @@ public class AppDbContext : DbContext
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
     {
     }
+
     public DbSet<User> Users => Set<User>();
-    
+    public DbSet<UserRoadmapAccess> UserRoadmapAccesses { get; set; }
     public DbSet<Roadmap> Roadmaps => Set<Roadmap>();
     public DbSet<Node> Nodes => Set<Node>();
     public DbSet<NodeFile> NodeFiles => Set<NodeFile>();
@@ -27,6 +28,7 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<NodeEdge>()
             .HasOne(e => e.ToNode).WithMany().HasForeignKey(e => e.ToNodeId).OnDelete(DeleteBehavior.Cascade);
         modelBuilder.Entity<NodeEdge>()
-            .HasOne(e => e.Roadmap).WithMany(r => r.Edges).HasForeignKey(e => e.RoadmapId).OnDelete(DeleteBehavior.Cascade);
+            .HasOne(e => e.Roadmap).WithMany(r => r.Edges).HasForeignKey(e => e.RoadmapId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }

@@ -56,49 +56,95 @@
         <div id="nodes-layer"></div>
     </div>
 
+    <!--    <div id="node-modal" class="modal-overlay" onclick="handleOverlayClick(event)">-->
+    <!--        <div class="modal-card">-->
+    <!--            <div class="modal-header">-->
+    <!--                <h2>Редактирование темы</h2>-->
+    <!--                <button class="close-modal-btn" onclick="closeDetails()">×</button>-->
+    <!--            </div>-->
+    <!--            <div class="modal-body">-->
+    <!--                <div class="edit-group">-->
+    <!--                    <label>Название темы</label>-->
+    <!--                    <input type="text" id="node-edit-title" placeholder="Напр. Основы JS">-->
+    <!--                </div>-->
+    <!--                <div class="edit-group">-->
+    <!--                    <label>Описание</label>-->
+    <!--                    <textarea id="node-edit-desc" rows="5" placeholder="О чем эта тема?"></textarea>-->
+    <!--                </div>-->
+    <!--            </div>-->
+    <!--            <div class="edit-group">-->
+    <!--                <label>Статус</label>-->
+    <!--                <select id="node-edit-status">-->
+    <!--                    <option value="todo">В плане</option>-->
+    <!--                    <option value="doing">В процессе</option>-->
+    <!--                    <option value="done">Завершено</option>-->
+    <!--                </select>-->
+    <!--            </div>-->
+    <!--            <div class="node-details">-->
+    <!--                <div class="conspect-section"-->
+    <!--                     style="margin-top: 20px; border-top: 1px solid var(&#45;&#45;border); padding-top: 15px;">-->
+    <!--                    <h4 style="margin-bottom: 10px;">Конспекты</h4>-->
+
+    <!--                    <div id="conspect-display" style="margin-bottom: 10px;"></div>-->
+
+    <!--                    <label for="conspectInput" class="btn-cancel"-->
+    <!--                           style="cursor: pointer; display: inline-block; text-align: center; width: 100%;">-->
+    <!--                        Добавить конспект-->
+    <!--                    </label>-->
+    <!--                    <input type="file" id="conspectInput" style="display:none" onchange="handleFileSelect(event)">-->
+    <!--                </div>-->
+    <!--            </div>-->
+    <!--            <div class="modal-actions">-->
+    <!--                <button id="btnSaveNode" class="btn-save">Сохранить</button>-->
+    <!--                <button class="btn-cancel" onclick="closeDetails()">Отмена</button>-->
+    <!--            </div>-->
+    <!--            <button id="btnDeleteNode" class="btn-delete">Удалить тему</button>-->
+    <!--        </div>-->
+    <!--    </div>-->
     <div id="node-modal" class="modal-overlay" onclick="handleOverlayClick(event)">
         <div class="modal-card">
             <div class="modal-header">
                 <h2>Редактирование темы</h2>
                 <button class="close-modal-btn" onclick="closeDetails()">×</button>
             </div>
+
             <div class="modal-body">
                 <div class="edit-group">
                     <label>Название темы</label>
-                    <input type="text" id="node-edit-title" placeholder="Напр. Основы JS">
+                    <input type="text" id="node-edit-title">
                 </div>
+
                 <div class="edit-group">
                     <label>Описание</label>
-                    <textarea id="node-edit-desc" rows="5" placeholder="О чем эта тема?"></textarea>
+                    <textarea id="node-edit-desc" rows="4"></textarea>
+                </div>
+
+                <div class="edit-group">
+                    <label>Статус</label>
+                    <select id="node-edit-status">
+                        <option value="todo">В плане</option>
+                        <option value="doing">В процессе</option>
+                        <option value="done">Завершено</option>
+                    </select>
+                </div>
+
+                <div class="conspect-section">
+                    <label>Конспекты</label>
+                    <div id="conspect-display" class="file-list"></div>
+                    <!-- Скрытый инпут для выбора файла -->
+                    <input type="file" id="fileInput" style="display:none" onchange="handleFileSelect(event)">
+                    <button class="btn-add-file" onclick="document.getElementById('fileInput').click()">
+                        + Добавить конспект
+                    </button>
                 </div>
             </div>
-            <div class="edit-group">
-                <label>Статус</label>
-                <select id="node-edit-status">
-                    <option value="todo">В плане</option>
-                    <option value="doing">В процессе</option>
-                    <option value="done">Завершено</option>
-                </select>
-            </div>
-            <div class="node-details">
-                <div class="conspect-section"
-                     style="margin-top: 20px; border-top: 1px solid var(--border); padding-top: 15px;">
-                    <h4 style="margin-bottom: 10px;">Конспекты</h4>
 
-                    <div id="conspect-display" style="margin-bottom: 10px;"></div>
-
-                    <label for="conspectInput" class="btn-cancel"
-                           style="cursor: pointer; display: inline-block; text-align: center; width: 100%;">
-                        Добавить конспект
-                    </label>
-                    <input type="file" id="conspectInput" style="display:none" onchange="handleFileSelect(event)">
-                </div>
-            </div>
             <div class="modal-actions">
                 <button id="btnSaveNode" class="btn-save">Сохранить</button>
                 <button class="btn-cancel" onclick="closeDetails()">Отмена</button>
             </div>
-            <button id="btnDeleteNode" class="btn-delete">Удалить тему</button>
+            <!-- Кнопка удаления в самом низу -->
+            <button id="btnDeleteNode" class="btn-delete-node">Удалить тему</button>
         </div>
     </div>
 </main>

@@ -146,6 +146,27 @@ namespace RoadMap.Data.Migrations
                     b.ToTable("Users");
                 });
 
+            modelBuilder.Entity("RoadMap.Data.Entities.UserRoadmapAccess", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("RoadmapId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RoadmapId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("UserRoadmapAccesses");
+                });
+
             modelBuilder.Entity("RoadMap.Data.Entities.Node", b =>
                 {
                     b.HasOne("RoadMap.Data.Entities.Roadmap", "Roadmap")
@@ -200,6 +221,25 @@ namespace RoadMap.Data.Migrations
                     b.HasOne("RoadMap.Data.Entities.User", "User")
                         .WithMany("Roadmaps")
                         .HasForeignKey("UserId");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("RoadMap.Data.Entities.UserRoadmapAccess", b =>
+                {
+                    b.HasOne("RoadMap.Data.Entities.Roadmap", "Roadmap")
+                        .WithMany()
+                        .HasForeignKey("RoadmapId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("RoadMap.Data.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Roadmap");
 
                     b.Navigation("User");
                 });

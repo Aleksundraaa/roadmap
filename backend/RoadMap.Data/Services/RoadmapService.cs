@@ -25,43 +25,31 @@ public class RoadmapService : IRoadmapService
         string Status);
 
 
-    public async Task<Roadmap> GetRoadmapWithNodes(string urlKey, int userId)
+    public async Task<Roadmap> GetRoadmapWithNodes(string urlKey)
     {
-        var roadmap = await _repository.GetRoadmapWithNodes(urlKey, userId);
+        var roadmap = await _repository.GetRoadmapWithNodes(urlKey);
         if (roadmap == null)
         {
-            throw new Exception("Дорожная карта не найдена или не вы ее владелец");
+            throw new Exception("Дорожная карта не найдена");
         }
 
         return roadmap;
     }
 
-    public async Task<Roadmap?> GetRoadmapByKey(string urlKey, int userId)
+    public async Task<Roadmap?> GetRoadmapByKey(string urlKey)
     {
-        var roadmap = await _repository.GetRoadmapWithoutNodes(urlKey, userId);
-        if (roadmap == null)
-        {
-            throw new Exception("Дорожная карта не найдена или не вы ее владелец");
-        }
-
+        var roadmap = await _repository.GetRoadmapWithNodes(urlKey);
         return roadmap;
     }
 
     public async Task<List<Roadmap>> GetAllRoadmaps(int userId)
     {
-        var roadmapList = await _repository.GetRoadmapList(userId);
-        return roadmapList;
+        return await _repository.GetRoadmapList(userId);
     }
 
-    public async Task<Roadmap> GetRoadmapWithFiles(string urlKey, int userId)
+    public async Task<Roadmap> GetRoadmapWithFiles(string urlKey)
     {
-        var roadmap = await _repository.GetRoadmapWithFiles(urlKey, userId);
-        // if (roadmap == null)
-        // {
-        //     throw new Exception("Не найдена дорожная карта или не вы владелец");
-        // }
-
-        return roadmap;
+        return await _repository.GetRoadmapWithFiles(urlKey);
     }
 
     private async Task<Node> GetNodeWithFile(int nodeId, IFormFile file)
@@ -109,11 +97,7 @@ public class RoadmapService : IRoadmapService
     public async Task<Node> GetNodeById(int id, int userId)
     {
         var node = await _repository.GetNode(id);
-        if (node == null || node.Roadmap.UserId != userId)
-        {
-            throw new Exception("Дорожная карта не найдена или не вы ее владелец");
-        }
-
+        if (node == null) throw new Exception("Узел не найден");
         return node;
     }
 
@@ -142,7 +126,7 @@ public class RoadmapService : IRoadmapService
 
     public async Task UpdateRoadmapTitle(string urlKey, int userId, string newTitle)
     {
-        var roadmap = await _repository.GetRoadmapWithoutNodes(urlKey, userId);
+        var roadmap = await _repository.GetRoadmapWithoutNodes(urlKey);
 
         if (roadmap == null)
         {
@@ -151,6 +135,11 @@ public class RoadmapService : IRoadmapService
 
         roadmap.Title = newTitle;
         await _repository.SaveChanges();
+    }
+
+    public async Task RecordUserVisit(int userId, int roadmapId)
+    {
+        await _repository.AddUserAccessIfNotExist(userId, roadmapId);
     }
 
 

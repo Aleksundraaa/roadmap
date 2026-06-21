@@ -779,3 +779,49 @@ input:checked + .slider:before {
 .edit-title-btn svg {
     display: block;
 }
+
+.btn-add-file {
+    width: 100%;
+    padding: 12px;
+    background: transparent;
+    border: 2px dashed var(--border);
+    border-radius: 12px;
+    color: var(--text-dim);
+    cursor: pointer;
+    margin-top: 10px;
+    font-weight: 600;
+    transition: all 0.2s;
+}
+
+.btn-add-file:hover {
+    border-color: var(--primary);
+    color: var(--primary);
+    background: rgba(0, 136, 255, 0.05);
+}
+
+.btn-delete-node {
+    width: 100%;
+    margin-top: 20px;
+    padding: 10px;
+    background: #fff5f5;
+    color: #ff4d4d;
+    border: 1px solid #ffcccc;
+    border-radius: 12px;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.btn-delete-node:hover {
+    background: #ff4d4d;
+    color: white;
+}
+
+#node-edit-status {
+    width: 100%;
+    padding: 12px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    color: var(--text);
+    cursor: pointer;
+}

@@ -20,38 +20,62 @@ public class RoadmapRepository : IRoadmapRepository
         await _context.SaveChangesAsync();
     }
 
-    public async Task<Roadmap?> GetRoadmapWithNodes(string urlKey, int userId)
+    public async Task<Roadmap?> GetRoadmapWithNodes(string urlKey)
     {
         var roadmap = await _context.Roadmaps
             .Include(n => n.Nodes)
             .Include(r => r.Edges)
-            .FirstOrDefaultAsync(r => r.UrlKey == urlKey && r.UserId == userId);
+            .FirstOrDefaultAsync(r => r.UrlKey == urlKey);
         return roadmap;
     }
 
-    public async Task<Roadmap?> GetRoadmapWithFiles(string urlKey, int userId)
+    public async Task<Roadmap?> GetRoadmapWithFiles(string urlKey)
     {
         var roadmap = await _context.Roadmaps
             .Include(n => n.Nodes)
             .ThenInclude(n => n.Files)
             .Include(r => r.Edges)
-            .FirstOrDefaultAsync(r => r.UrlKey == urlKey && r.UserId == userId);
+            .FirstOrDefaultAsync(r => r.UrlKey == urlKey);
         return roadmap;
     }
 
-    public async Task<Roadmap?> GetRoadmapWithoutNodes(string urlKey, int userId)
+    public async Task AddUserAccessIfNotExist(int userId, int roadmapId)
+    {
+        var exists = await _context.UserRoadmapAccesses
+            .AnyAsync(a => a.UserId == userId && a.RoadmapId == roadmapId);
+
+        if (!exists)
+        {
+            _context.UserRoadmapAccesses.Add(new UserRoadmapAccess 
+            { 
+                UserId = userId, 
+                RoadmapId = roadmapId 
+            });
+            await _context.SaveChangesAsync();
+        }
+    }
+
+    public async Task<List<Roadmap>> GetRoadmapListWithVisited(int userId)
+    {
+        return await _context.Roadmaps
+            .Where(r => r.UserId == userId || 
+                        _context.UserRoadmapAccesses.Any(a => a.RoadmapId == r.Id && a.UserId == userId))
+            .ToListAsync();
+    }
+
+    public async Task<Roadmap?> GetRoadmapWithoutNodes(string urlKey)
     {
         var roadmap = await _context.Roadmaps
-            .FirstOrDefaultAsync(r => r.UrlKey == urlKey && r.UserId == userId);
+            .FirstOrDefaultAsync(r => r.UrlKey == urlKey);
         return roadmap;
     }
 
     public async Task<List<Roadmap>> GetRoadmapList(int userId)
     {
-        var roadmapList = await _context.Roadmaps
-            .Where(r => r.UserId == userId)
+        return await _context.Roadmaps
+            .Where(r => r.UserId == userId || 
+                        _context.UserRoadmapAccesses.Any(a => a.RoadmapId == r.Id && a.UserId == userId))
             .ToListAsync();
-        return roadmapList;
     }
 
     public async Task<Node?> GetNodeWithFile(int nodeId, IFormFile file)
