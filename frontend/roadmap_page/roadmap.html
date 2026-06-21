@@ -10,8 +10,19 @@
 <body>
 <header class="top-bar">
     <button onclick="location.href='../start_page/index.html'" class="btn-back">← Назад</button>
+
     <div class="info">
-        <h1 id="roadmapTitle">Загрузка плана...</h1>
+        <div class="title-wrapper">
+            <h1 id="roadmapTitle">Загрузка плана...</h1>
+            <button class="edit-title-btn" data-tooltip="Изменить название" onclick="renameRoadmap()">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                     stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                </svg>
+            </button>
+        </div>
+
         <div class="key-container">
             <span>Ключ: </span>
             <code id="roadmapKey">--------</code>
@@ -19,6 +30,7 @@
             <span id="copyStatus">Скопировано!</span>
         </div>
     </div>
+
     <div class="search-container">
         <input type="text" id="nodeSearch" placeholder="Поиск темы..." oninput="handleSearch()">
         <div id="searchResults" class="search-results"></div>
@@ -69,12 +81,14 @@
                 </select>
             </div>
             <div class="node-details">
-                <div class="conspect-section" style="margin-top: 20px; border-top: 1px solid var(--border); padding-top: 15px;">
+                <div class="conspect-section"
+                     style="margin-top: 20px; border-top: 1px solid var(--border); padding-top: 15px;">
                     <h4 style="margin-bottom: 10px;">Конспекты</h4>
 
                     <div id="conspect-display" style="margin-bottom: 10px;"></div>
 
-                    <label for="conspectInput" class="btn-cancel" style="cursor: pointer; display: inline-block; text-align: center; width: 100%;">
+                    <label for="conspectInput" class="btn-cancel"
+                           style="cursor: pointer; display: inline-block; text-align: center; width: 100%;">
                         Добавить конспект
                     </label>
                     <input type="file" id="conspectInput" style="display:none" onchange="handleFileSelect(event)">
@@ -108,15 +122,20 @@
             <button class="close-modal-btn" onclick="closeHelp()">×</button>
         </div>
         <div class="modal-body help-body">
-            <div class="help-item"><span class="help-key">+ Добавить занятие</span><span>Создать новую тему на холсте</span></div>
-            <div class="help-item"><span class="help-key">Двойной клик</span><span>Открыть и редактировать тему</span></div>
+            <div class="help-item"><span
+                    class="help-key">+ Добавить занятие</span><span>Создать новую тему на холсте</span></div>
+            <div class="help-item"><span class="help-key">Двойной клик</span><span>Открыть и редактировать тему</span>
+            </div>
             <div class="help-item"><span class="help-key">Перетащить</span><span>Переместить тему на холсте</span></div>
-            <div class="help-item"><span class="help-key">Alt + клик → Alt + клик</span><span>Создать связь между двумя темами</span></div>
+            <div class="help-item"><span class="help-key">Alt + клик → Alt + клик</span><span>Создать связь между двумя темами</span>
+            </div>
             <div class="help-item"><span class="help-key">Двойной клик на линии</span><span>Удалить связь</span></div>
             <div class="help-item"><span class="help-key">Скролл</span><span>Масштаб холста</span></div>
             <div class="help-item"><span class="help-key">Перетащить фон</span><span>Перемещение по холсту</span></div>
-            <div class="help-item"><span class="help-key">✦ Подсказка ИИ</span><span>Получить советы и новые темы от ИИ</span></div>
-            <div class="help-item"><span class="help-key">Поиск</span><span>Найти тему по названию и перейти к ней</span></div>
+            <div class="help-item"><span
+                    class="help-key">✦ Подсказка ИИ</span><span>Получить советы и новые темы от ИИ</span></div>
+            <div class="help-item"><span
+                    class="help-key">Поиск</span><span>Найти тему по названию и перейти к ней</span></div>
         </div>
     </div>
 </div>

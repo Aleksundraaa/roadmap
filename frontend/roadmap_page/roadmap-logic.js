@@ -22,19 +22,6 @@ const content = document.getElementById('canvas-content');
 const nodesLayer = document.getElementById('nodes-layer');
 const svgLayer = document.getElementById('canvas-svg');
 
-const toggleSwitch = document.querySelector('#checkbox');
-const currentTheme = localStorage.getItem('theme') || 'light';
-
-document.documentElement.setAttribute('data-theme', currentTheme);
-if (toggleSwitch) {
-    toggleSwitch.checked = currentTheme === 'dark';
-    toggleSwitch.addEventListener('change', (e) => {
-        const theme = e.target.checked ? 'dark' : 'light';
-        document.documentElement.setAttribute('data-theme', theme);
-        localStorage.setItem('theme', theme);
-    });
-}
-
 async function loadRoadmap() {
     const params = new URLSearchParams(window.location.search);
     const key = params.get('key');
@@ -75,7 +62,8 @@ async function loadRoadmap() {
 
         roadmapData = await response.json();
 
-        document.getElementById('roadmapTitle').innerText = roadmapData.title;
+        const titleDisplay = roadmapData.title || "Без названия";
+        document.getElementById('roadmapTitle').innerText = titleDisplay;
 
         renderNodes(roadmapData.nodes);
         renderEdges(roadmapData.nodes, roadmapData.edges || []);
@@ -690,6 +678,53 @@ document.getElementById('btnDeleteRoadmap').onclick = () => {
         }
     });
 };
+
+async function renameRoadmap() {
+    const titleElement = document.getElementById('roadmapTitle');
+    const oldTitle = titleElement.innerText;
+
+    // 1. Показываем системное окно ввода
+    // Оно вернет текст или null, если нажали "Отмена"
+    const newTitle = prompt("Введите новое название для этого холста:", oldTitle);
+
+    // 2. Проверяем ввод: если отмена, пусто или то же самое — выходим
+    if (newTitle === null || newTitle.trim() === "" || newTitle === oldTitle) {
+        return;
+    }
+
+    const params = new URLSearchParams(window.location.search);
+    const key = params.get('key');
+    const token = localStorage.getItem('token');
+
+    try {
+        // 3. Отправляем запрос на бэкенд
+        // Путь должен совпадать с контроллером: [HttpPatch("{urlKey}/update")]
+        const response = await fetch(`${API_URL}/${key}/update`, {
+            method: 'PATCH',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({title: newTitle.trim()}) // Наш Record на бэке ждет поле Title
+        });
+
+        if (response.ok) {
+            // 4. Если сервер сохранил, меняем текст в заголовке
+            titleElement.innerText = newTitle.trim();
+
+            // Если у тебя есть функция showToast, вызываем её для красоты
+            if (typeof showToast === 'function') {
+                showToast("Название успешно изменено", "success");
+            }
+        } else {
+            const errorData = await response.json().catch(() => ({}));
+            alert("Ошибка сервера: " + (errorData.message || response.status));
+        }
+    } catch (e) {
+        console.error("Ошибка при переименовании:", e);
+        alert("Не удалось связаться с сервером.");
+    }
+}
 
 function toggleHelpPanel() {
     const modal = document.getElementById('help-modal');

@@ -24,6 +24,7 @@ public class RoadmapService : IRoadmapService
         int? ParentNodeId,
         string Status);
 
+
     public async Task<Roadmap> GetRoadmapWithNodes(string urlKey, int userId)
     {
         var roadmap = await _repository.GetRoadmapWithNodes(urlKey, userId);
@@ -138,6 +139,20 @@ public class RoadmapService : IRoadmapService
             throw new Exception("Связь не найдена или нет прав");
         return edge;
     }
+
+    public async Task UpdateRoadmapTitle(string urlKey, int userId, string newTitle)
+    {
+        var roadmap = await _repository.GetRoadmapWithoutNodes(urlKey, userId);
+
+        if (roadmap == null)
+        {
+            throw new Exception("Дорожная карта не найдена или у вас нет прав");
+        }
+
+        roadmap.Title = newTitle;
+        await _repository.SaveChanges();
+    }
+
 
     public async Task<NodeFile> UploadNodeFileAsync(int nodeId, int userId, IFormFile file)
     {

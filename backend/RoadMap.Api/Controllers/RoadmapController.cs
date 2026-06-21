@@ -34,13 +34,15 @@ public class RoadmapController : ControllerBase
         {
             return BadRequest(new { message = "Key cannot be null" });
         }
+
         var userId = GetUserId();
         var roadmap = await _roadmapService.GetRoadmapWithFiles(urlKey, userId);
-        
+
         if (roadmap == null)
         {
             return NotFound(new { message = "Roadmap not found or access denied" });
         }
+
         return Ok(roadmap);
     }
 
@@ -140,6 +142,28 @@ public class RoadmapController : ControllerBase
         return Ok();
     }
 
+    public record UpdateTitleRequest(string Title);
+
+    [Authorize]
+    [HttpPatch("{urlKey}/update")]
+    public async Task<IActionResult> UpdateRoadmap(string urlKey, [FromBody] UpdateTitleRequest request)
+    {
+        if (string.IsNullOrWhiteSpace(request.Title))
+            return BadRequest(new { message = "Название не может быть пустым" });
+
+        var userId = GetUserId();
+
+        try
+        {
+            await _roadmapService.UpdateRoadmapTitle(urlKey, userId, request.Title);
+            return Ok(new { title = request.Title });
+        }
+        catch (Exception e)
+        {
+            return NotFound(new { message = e.Message });
+        }
+    }
+
     [HttpGet]
     public async Task<ActionResult<IEnumerable<Roadmap>>> GetMyRoadmaps()
     {
@@ -170,32 +194,39 @@ public class RoadmapController : ControllerBase
         var model = configuration["OpenRouter:Model"] ?? "openai/gpt-4o-mini";
 
         if (string.IsNullOrEmpty(apiKey))
-            return BadRequest(new { error = "OpenRouter API ключ не настроен. Добавьте его в appsettings.Development.json." });
+            return BadRequest(new
+                { error = "OpenRouter API ключ не настроен. Добавьте его в appsettings.Development.json." });
 
         var nodesText = string.Join("\n", roadmap.Nodes
             .Take(100)
-            .Select(n => $"- {n.Title}: {(string.IsNullOrEmpty(n.Description) ? "без описания" : n.Description)} (статус: {n.Status})"));
+            .Select(n =>
+                $"- {n.Title}: {(string.IsNullOrEmpty(n.Description) ? "без описания" : n.Description)} (статус: {n.Status})"));
 
         var userPrompt = $$"""
-            Пользователь создал учебный роадмап "{{roadmap.Title}}".
+                           Пользователь создал учебный роадмап "{{roadmap.Title}}".
 
-            Существующие узлы:
-            {{nodesText}}
+                           Существующие узлы:
+                           {{nodesText}}
 
-            Дай практичный совет на русском языке:
-            1. Напиши 2-3 абзаца о том, что ещё можно изучить или добавить в этот роадмап.
-            2. Предложи ровно 3 новых узла.
+                           Дай практичный совет на русском языке:
+                           1. Напиши 2-3 абзаца о том, что ещё можно изучить или добавить в этот роадмап.
+                           2. Предложи ровно 3 новых узла.
 
-            Ответь строго в формате JSON (без markdown, без обёрток):
-            {"advice": "текстовый совет", "suggestedNodes": [{"title": "название", "description": "краткое описание"}]}
-            """;
+                           Ответь строго в формате JSON (без markdown, без обёрток):
+                           {"advice": "текстовый совет", "suggestedNodes": [{"title": "название", "description": "краткое описание"}]}
+                           """;
 
         var requestBody = new
         {
             model,
             messages = new[]
             {
-                new { role = "system", content = "Ты помощник для создания учебных роадмапов. Отвечай строго на русском языке. Возвращай только валидный JSON без markdown-обёрток." },
+                new
+                {
+                    role = "system",
+                    content =
+                        "Ты помощник для создания учебных роадмапов. Отвечай строго на русском языке. Возвращай только валидный JSON без markdown-обёрток."
+                },
                 new { role = "user", content = userPrompt }
             },
             response_format = new { type = "json_object" },
@@ -249,7 +280,8 @@ public class RoadmapController : ControllerBase
         catch (JsonException ex)
         {
             _logger.LogError("[AI-Hint] Failed to parse model content as JSON. Content: {Content}", cleanContent);
-            return StatusCode(502, new { error = $"ИИ вернул некорректный JSON: {ex.Message}", rawContent = cleanContent });
+            return StatusCode(502,
+                new { error = $"ИИ вернул некорректный JSON: {ex.Message}", rawContent = cleanContent });
         }
     }
 }

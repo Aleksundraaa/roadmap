@@ -21,4 +21,5 @@ public interface IRoadmapService
     Task AddEdge(NodeEdge edge);
     Task RemoveEdge(NodeEdge edge);
     Task<NodeEdge> GetEdgeById(int edgeId, int userId);
+    Task UpdateRoadmapTitle(string urlKey, int userId, string newTitle);
 }

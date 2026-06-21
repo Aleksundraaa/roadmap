@@ -342,7 +342,7 @@ select {
     overflow-y: auto;
     z-index: 1000;
     display: none;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .search-item {
@@ -356,7 +356,9 @@ select {
     background: var(--bg);
 }
 
-.search-item:last-child { border-bottom: none; }
+.search-item:last-child {
+    border-bottom: none;
+}
 
 #copyStatus {
     display: none;
@@ -517,7 +519,9 @@ input:checked + .slider:before {
 }
 
 @keyframes spin {
-    to { transform: rotate(360deg); }
+    to {
+        transform: rotate(360deg);
+    }
 }
 
 .ai-hint-advice {
@@ -634,11 +638,12 @@ input:checked + .slider:before {
     font-size: 0.85rem;
     font-weight: 600;
     cursor: pointer;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
     z-index: 100;
     transition: background 0.2s, border-color 0.2s, color 0.2s;
     white-space: nowrap;
 }
+
 .btn-help:hover {
     background: var(--primary);
     color: #fff;
@@ -663,6 +668,7 @@ input:checked + .slider:before {
     padding: 8px 0;
     border-bottom: 1px solid var(--border);
 }
+
 .help-item:last-child {
     border-bottom: none;
 }
@@ -703,6 +709,21 @@ input:checked + .slider:before {
     z-index: 10000;
 }
 
+.top-bar [data-tooltip]::after {
+    bottom: auto;
+    top: 130%;
+    transform: translateX(-50%) translateY(-5px);
+}
+
+.top-bar [data-tooltip]:hover::after {
+    transform: translateX(-50%) translateY(0);
+}
+
+.top-bar [data-tooltip]::before {
+    display: none;
+}
+
+
 [data-tooltip]::before {
     content: "";
     position: absolute;
@@ -725,4 +746,36 @@ input:checked + .slider:before {
     opacity: 1;
     visibility: visible;
     transform: translateX(-50%) translateY(0);
+}
+
+.title-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 4px;
+}
+
+#roadmapTitle {
+    margin: 0;
+    line-height: 1.2;
+}
+
+.edit-title-btn {
+    background: none;
+    border: none;
+    color: var(--text-dim);
+    cursor: pointer;
+    display: flex;
+    padding: 4px;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+}
+
+.edit-title-btn:hover {
+    color: var(--primary);
+    background: rgba(0, 136, 255, 0.1);
+}
+
+.edit-title-btn svg {
+    display: block;
 }
