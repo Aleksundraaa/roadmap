@@ -94,11 +94,13 @@ async function loadRoadmapsList() {
         roadmaps.forEach(rm => {
             const item = document.createElement('div');
             item.className = 'roadmap-item';
+            item.onclick = () => {
+                window.location.href = `../roadmap_page/roadmap.html?key=${rm.urlKey}`;
+            };
 
-            const link = document.createElement('a');
-            link.href = `../roadmap_page/roadmap.html?key=${rm.urlKey}`;
-            link.className = 'roadmap-name';
-            link.textContent = rm.title || 'Без названия';
+            const title = document.createElement('span');
+            title.className = 'roadmap-name';
+            title.textContent = rm.title || 'Без названия';
 
             const footer = document.createElement('div');
             footer.className = 'roadmap-item-footer';
@@ -107,15 +109,34 @@ async function loadRoadmapsList() {
             keySpan.className = 'roadmap-key';
             keySpan.textContent = rm.urlKey;
 
+            const actions = document.createElement('div');
+            actions.className = 'roadmap-actions-group';
+
             const copyBtn = document.createElement('button');
             copyBtn.className = 'btn-copy-small';
             copyBtn.title = 'Копировать ключ';
             copyBtn.textContent = '📋';
-            copyBtn.onclick = () => copyToClipboard(rm.urlKey);
+            copyBtn.onclick = (e) => {
+                e.stopPropagation();
+                copyToClipboard(rm.urlKey);
+            };
+
+            const deleteBtn = document.createElement('button');
+            deleteBtn.className = 'btn-delete-small';
+            deleteBtn.title = 'Удалить холст';
+            deleteBtn.textContent = '🗑️';
+            deleteBtn.onclick = (e) => {
+                e.stopPropagation();
+                deleteRoadmap(rm.urlKey, rm.title);
+            };
+
+            actions.appendChild(copyBtn);
+            actions.appendChild(deleteBtn);
 
             footer.appendChild(keySpan);
-            footer.appendChild(copyBtn);
-            item.appendChild(link);
+            footer.appendChild(actions);
+
+            item.appendChild(title);
             item.appendChild(footer);
             listContainer.appendChild(item);
         });
@@ -128,6 +149,30 @@ async function loadRoadmapsList() {
         errDiv.textContent = 'Не удалось загрузить список';
         listContainer.appendChild(errDiv);
     }
+}
+
+async function deleteRoadmap(urlKey, title) {
+    showConfirm(`Вы уверены, что хотите удалить холст "${title}"?`, async () => {
+        const token = localStorage.getItem('token');
+        try {
+            const response = await fetch(`${API_BASE}/${urlKey}`, {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            if (response.ok) {
+                showToast("Холст удален", "success");
+                loadRoadmapsList();
+            } else {
+                showToast("Ошибка при удалении", "error");
+            }
+        } catch (e) {
+            console.error(e);
+            showToast("Нет связи с сервером", "error");
+        }
+    });
 }
 
 function copyToClipboard(text) {

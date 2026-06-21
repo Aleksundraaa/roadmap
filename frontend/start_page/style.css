@@ -297,3 +297,55 @@ input:checked + .slider:before {
     overflow: hidden;
     text-overflow: ellipsis;
 }
+
+.roadmap-item {
+    cursor: pointer;
+    transition: background 0.2s;
+    border: 1px solid var(--border);
+    padding: 12px;
+    border-radius: 12px;
+    margin-bottom: 10px;
+    background: var(--card-bg);
+}
+
+.roadmap-item:hover {
+    background: rgba(0, 136, 255, 0.05);
+}
+
+.roadmap-item-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 8px;
+}
+
+.roadmap-actions-group {
+    display: flex;
+    gap: 8px;
+}
+
+.btn-copy-small, .btn-delete-small {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 1rem;
+    padding: 4px;
+    border-radius: 6px;
+    transition: background 0.2s;
+}
+
+.btn-copy-small:hover {
+    background: rgba(0, 136, 255, 0.1);
+}
+
+.btn-delete-small:hover {
+    background: rgba(220, 38, 38, 0.1);
+    filter: grayscale(0);
+}
+
+.roadmap-name {
+    font-weight: 600;
+    color: var(--text);
+    display: block;
+    margin-bottom: 4px;
+}
