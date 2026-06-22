@@ -212,6 +212,8 @@ public class RoadmapController : ControllerBase
             .Select(n =>
                 $"- {n.Title}: {(string.IsNullOrEmpty(n.Description) ? "без описания" : n.Description)} (статус: {n.Status})"));
 
+        var existingTitles = string.Join(", ", roadmap.Nodes.Take(100).Select(n => $"\"{n.Title}\""));
+
         var userPrompt = $$"""
                            Пользователь создал учебный роадмап "{{roadmap.Title}}".
 
@@ -221,9 +223,10 @@ public class RoadmapController : ControllerBase
                            Дай практичный совет на русском языке:
                            1. Напиши 2-3 абзаца о том, что ещё можно изучить или добавить в этот роадмап.
                            2. Предложи ровно 3 новых узла.
+                           3. Для каждого нового узла укажи связи: с какими существующими узлами ({{existingTitles}}) или с другими новыми узлами он должен быть связан. Используй точные названия.
 
                            Ответь строго в формате JSON (без markdown, без обёрток):
-                           {"advice": "текстовый совет", "suggestedNodes": [{"title": "название", "description": "краткое описание"}]}
+                           {"advice": "текстовый совет", "suggestedNodes": [{"title": "название", "description": "краткое описание", "connectTo": ["название существующего или нового узла"]}]}
                            """;
 
         var requestBody = new
