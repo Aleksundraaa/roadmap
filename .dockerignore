@@ -1,0 +1,12 @@
+backend/**/bin/
+backend/**/obj/
+backend/**/*.db
+backend/**/*.db-shm
+backend/**/*.db-wal
+backend/**/appsettings.Development.json
+frontend/
+nginx/
+.git/
+.claude/
+*.md
+docker-compose.yml
