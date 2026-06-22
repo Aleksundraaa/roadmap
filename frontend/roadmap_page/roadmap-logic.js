@@ -1,4 +1,4 @@
-const API_URL = 'http://localhost:5000/api/Roadmap';
+const API_URL = '/api/Roadmap';
 const NODE_WIDTH = 200;
 const NODE_HEIGHT = 120;
 const EDGE_COLORS = {
@@ -213,7 +213,7 @@ function showNodeDetails(node) {
             const div = document.createElement('div');
             div.className = 'file-item';
             const link = document.createElement('a');
-            link.href = `http://localhost:5000/uploads/${f.storagePath}`;
+            link.href = `/uploads/${f.storagePath}`;
             link.target = '_blank';
             link.textContent = `📄 ${f.fileName}`;
             div.appendChild(link);

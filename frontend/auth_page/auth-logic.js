@@ -1,5 +1,5 @@
 let isLoginMode = true;
-const API_AUTH = "http://localhost:5000/api/auth";
+const API_AUTH = "/api/auth";
 
 const toggleSwitch = document.querySelector('#checkbox');
 const currentTheme = localStorage.getItem('theme') || 'light';

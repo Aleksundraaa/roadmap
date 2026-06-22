@@ -1,4 +1,4 @@
-const AI_HINT_API = 'http://localhost:5000/api/Roadmap';
+const AI_HINT_API = '/api/Roadmap';
 
 let aiSuggestedNodes = [];
 

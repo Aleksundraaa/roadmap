@@ -1,4 +1,4 @@
-const API_URL = 'http://localhost:5000/api/Roadmap';
+const API_URL = '/api/Roadmap';
 
 const toggleSwitch = document.querySelector('#checkbox');
 const currentTheme = localStorage.getItem('theme') || 'light';
@@ -64,7 +64,7 @@ function openRoadmap() {
     window.location.href = `../roadmap_page/roadmap.html?key=${key}`;
 }
 
-const API_BASE = 'http://localhost:5000/api/Roadmap';
+const API_BASE = '/api/Roadmap';
 
 async function loadRoadmapsList() {
     const listContainer = document.getElementById('roadmap-list');
