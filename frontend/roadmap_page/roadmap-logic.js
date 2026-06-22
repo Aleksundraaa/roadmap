@@ -90,13 +90,30 @@ function renderNodes(nodes) {
             card.style.outline = '3px solid var(--primary)';
         }
 
-        card.innerHTML = `
-            <div class="node-status ${status.class}">${status.text}</div>
-            ${node.files?.length > 0 ? `<div class="node-files-count">📎 Конспектов: ${node.files.length}</div>` : ''}
-            <h3>${node.title}</h3>
-            <p class="node-desc">${node.description || 'Нет описания'}</p>
-            <div class="node-line ${node.status || 'todo'}"></div>
-        `;
+        const statusDiv = document.createElement('div');
+        statusDiv.className = `node-status ${status.class}`;
+        statusDiv.textContent = status.text;
+        card.appendChild(statusDiv);
+
+        if (node.files?.length > 0) {
+            const filesCount = document.createElement('div');
+            filesCount.className = 'node-files-count';
+            filesCount.textContent = `📎 Конспектов: ${node.files.length}`;
+            card.appendChild(filesCount);
+        }
+
+        const titleEl = document.createElement('h3');
+        titleEl.textContent = node.title;
+        card.appendChild(titleEl);
+
+        const descEl = document.createElement('p');
+        descEl.className = 'node-desc';
+        descEl.textContent = node.description || 'Нет описания';
+        card.appendChild(descEl);
+
+        const lineEl = document.createElement('div');
+        lineEl.className = `node-line ${node.status || 'todo'}`;
+        card.appendChild(lineEl);
 
         card.ondblclick = (e) => {
             e.stopPropagation();
@@ -195,11 +212,19 @@ function showNodeDetails(node) {
         node.files.forEach(f => {
             const div = document.createElement('div');
             div.className = 'file-item';
-            div.innerHTML = `<a href="http://localhost:5000/uploads/${f.storagePath}" target="_blank">📄 ${f.fileName}</a>`;
+            const link = document.createElement('a');
+            link.href = `http://localhost:5000/uploads/${f.storagePath}`;
+            link.target = '_blank';
+            link.textContent = `📄 ${f.fileName}`;
+            div.appendChild(link);
             display.appendChild(div);
         });
     } else {
-        display.innerHTML = '<p style="color:#888; font-size:0.8rem">Нет прикрепленных файлов</p>';
+        const empty = document.createElement('p');
+        empty.style.color = '#888';
+        empty.style.fontSize = '0.8rem';
+        empty.textContent = 'Нет прикрепленных файлов';
+        display.appendChild(empty);
     }
     document.getElementById('node-modal').classList.add('active');
 }
@@ -362,34 +387,35 @@ async function connectNodes(fromId, toId) {
 async function renameRoadmap() {
     const titleElement = document.getElementById('roadmapTitle');
     const oldTitle = titleElement.innerText;
-    const newTitle = prompt("Введите новое название холста:", oldTitle);
 
-    if (!newTitle || newTitle.trim() === "" || newTitle === oldTitle) return;
+    showInputDialog("Новое название холста", oldTitle, async (newTitle) => {
+        if (newTitle === oldTitle) return;
 
-    const key = new URLSearchParams(window.location.search).get('key');
-    const token = localStorage.getItem('token');
+        const key = new URLSearchParams(window.location.search).get('key');
+        const token = localStorage.getItem('token');
 
-    try {
-        const response = await fetch(`${API_URL}/${key}/update`, {
-            method: 'PATCH',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({title: newTitle.trim()})
-        });
+        try {
+            const response = await fetch(`${API_URL}/${key}/update`, {
+                method: 'PATCH',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({title: newTitle})
+            });
 
-        if (response.ok) {
-            titleElement.innerText = newTitle.trim();
-            if (roadmapData) roadmapData.title = newTitle.trim(); // Обновляем локальные данные
-            showToast("Название обновлено", "success");
-        } else {
-            showToast("Ошибка при переименовании", "error");
+            if (response.ok) {
+                titleElement.innerText = newTitle;
+                if (roadmapData) roadmapData.title = newTitle;
+                showToast("Название обновлено", "success");
+            } else {
+                showToast("Ошибка при переименовании", "error");
+            }
+        } catch (e) {
+            console.error(e);
+            showToast("Нет связи с сервером", "error");
         }
-    } catch (e) {
-        console.error(e);
-        showToast("Нет связи с сервером", "error");
-    }
+    });
 }
 
 const deleteRoadmapBtn = document.getElementById('btnDeleteRoadmap');
@@ -454,9 +480,72 @@ function switchThemeToggle() {
     localStorage.setItem('theme', next);
 }
 
+function handleSearch() {
+    const query = document.getElementById('nodeSearch').value.trim().toLowerCase();
+    const resultsEl = document.getElementById('searchResults');
+    resultsEl.replaceChildren();
+
+    if (!query || !roadmapData?.nodes?.length) {
+        resultsEl.style.display = 'none';
+        return;
+    }
+
+    const matches = roadmapData.nodes.filter(n => n.title.toLowerCase().includes(query));
+
+    if (matches.length === 0) {
+        resultsEl.style.display = 'none';
+        return;
+    }
+
+    matches.forEach(node => {
+        const item = document.createElement('div');
+        item.className = 'search-item';
+        item.textContent = node.title;
+        item.onclick = () => {
+            const container = document.getElementById('canvas-container');
+            pointX = container.clientWidth / 2 - node.x * scale;
+            pointY = container.clientHeight / 2 - node.y * scale;
+            content.style.transform = `translate(${pointX}px, ${pointY}px) scale(${scale})`;
+            resultsEl.style.display = 'none';
+            document.getElementById('nodeSearch').value = '';
+        };
+        resultsEl.appendChild(item);
+    });
+
+    resultsEl.style.display = 'block';
+}
+
+function copyKey() {
+    const key = document.getElementById('roadmapKey').textContent;
+    navigator.clipboard.writeText(key).then(() => showToast('Ключ скопирован: ' + key, 'success'));
+}
+
 function handleOverlayClick(e) {
     if (e.target.id === 'node-modal') closeDetails();
 }
 
+function toggleHelpPanel() {
+    const modal = document.getElementById('help-modal');
+    modal.classList.toggle('active');
+}
+
+function closeHelp() {
+    document.getElementById('help-modal').classList.remove('active');
+}
+
+function closeHelpIfOverlay(e) {
+    if (e.target.id === 'help-modal') closeHelp();
+}
+
 applyTheme();
+
+const toggleSwitch = document.querySelector('#checkbox');
+if (toggleSwitch) {
+    toggleSwitch.checked = (localStorage.getItem('theme') || 'light') === 'dark';
+    toggleSwitch.addEventListener('change', () => {
+        switchThemeToggle();
+        toggleSwitch.checked = document.documentElement.getAttribute('data-theme') === 'dark';
+    });
+}
+
 loadRoadmap();

@@ -45,21 +45,5 @@
 
 <script src="../utils.js"></script>
 <script src="auth-logic.js"></script>
-
-<script>
-    const toggleSwitch = document.querySelector('#checkbox');
-    const currentTheme = localStorage.getItem('theme') || 'light';
-
-    document.documentElement.setAttribute('data-theme', currentTheme);
-
-    if (toggleSwitch) {
-        toggleSwitch.checked = currentTheme === 'dark';
-        toggleSwitch.addEventListener('change', (e) => {
-            const theme = e.target.checked ? 'dark' : 'light';
-            document.documentElement.setAttribute('data-theme', theme);
-            localStorage.setItem('theme', theme);
-        });
-    }
-</script>
 </body>
 </html>

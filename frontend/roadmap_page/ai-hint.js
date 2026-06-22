@@ -171,8 +171,16 @@ async function addSuggestedNode(index) {
     const usedYs = existing.filter(n => n.x > baseX - 260).map(n => n.y);
     const baseY = usedYs.length > 0 ? Math.max(...usedYs) + 160 : 3000;
 
-    await createNodeFromSuggestion(node.title, node.description, baseX, baseY);
+    const createdId = await createNodeFromSuggestion(node.title, node.description, baseX, baseY);
     await loadRoadmap();
+
+    if (createdId && node.connectTo?.length) {
+        for (const targetTitle of node.connectTo) {
+            const target = roadmapData.nodes.find(n => n.title === targetTitle);
+            if (target && target.id !== createdId) await connectNodes(createdId, target.id);
+        }
+        await loadRoadmap();
+    }
 }
 
 async function addAllSuggestedNodes() {
@@ -184,20 +192,22 @@ async function addAllSuggestedNodes() {
     const baseX = existing.length > 0 ? Math.max(...existing.map(n => n.x)) + 250 : 3000;
     const baseY = existing.length > 0 ? Math.min(...existing.map(n => n.y)) : 3000;
 
-    const createdIds = [];
+    const titleToId = {};
     for (let i = 0; i < aiSuggestedNodes.length; i++) {
         const node = aiSuggestedNodes[i];
         const id = await createNodeFromSuggestion(node.title, node.description, baseX, baseY + i * 160);
-        createdIds.push(id);
+        if (id) titleToId[node.title] = id;
     }
 
     await loadRoadmap();
 
-    for (let i = 0; i < createdIds.length - 1; i++) {
-        if (!createdIds[i] || !createdIds[i + 1]) continue;
-        const parent = roadmapData.nodes.find(n => n.id === createdIds[i]);
-        const child = roadmapData.nodes.find(n => n.id === createdIds[i + 1]);
-        if (parent && child) await connectNodes(parent.id, child);
+    for (const node of aiSuggestedNodes) {
+        const fromId = titleToId[node.title];
+        if (!fromId || !node.connectTo?.length) continue;
+        for (const targetTitle of node.connectTo) {
+            const toId = titleToId[targetTitle] || roadmapData.nodes.find(n => n.title === targetTitle)?.id;
+            if (toId && toId !== fromId) await connectNodes(fromId, toId);
+        }
     }
 
     await loadRoadmap();
